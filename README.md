@@ -1,178 +1,185 @@
-# sufdo
+# sufdo v3.10.0 - Complete Edition
 
-**Super User Fkin Do**
+**Super User Fkin Do** - Execute commands with elevated privileges. Because sometimes you just need to get shit done.
 
-A sudo-like utility for executing commands with elevated privileges. Because sometimes you just need to get shit done.
+## 🎯 Features
 
-## Features
+### Core
+- ✅ Execute commands with elevated privileges
+- ✅ Command history tracking
+- ✅ Re-run last command (`--last`, `-!`)
+- ✅ Timeout support (`--timeout`, `-t`)
+- ✅ Custom aliases with arguments (`$1`, `$2`, `$@`)
+- ✅ Confidence system
+- ✅ Cross-platform (Windows, Linux, macOS)
 
-- Execute commands with elevated privileges
-- Command history tracking
-- Re-run last command with `--last`
-- Timeout support
-- Custom aliases
-- Flex messages after successful execution
-- Colored output
-- **Confidence system** - your confidence goes up/down based on command success
-- **Silent/Verbose modes** - control output verbosity
-- **Debug/Trace modes** - detailed debugging information
-- **Logging** - log all commands to file
-- **Auto-commit scheduler** - 200 features rolling out over 10 days
+### Silent/Verbose Modes
+- ✅ `--silent`, `-q`, `--quiet` - Silent mode
+- ✅ `--verbose`, `-V` - Verbose output
+- ✅ `--debug` - Debug information
+- ✅ `--trace` - Execution tracing
 
-## Roadmap
+### Safety Modes
+- ✅ `--dry-run` - Preview without executing
+- ✅ `--confirm` - Ask for confirmation
+- ✅ `--safe-mode` - Block destructive commands
+- ✅ `--backup` - Backup before operations
 
-See [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) for the full roadmap.
+### Logging
+- ✅ `--log` - Log to file
+- ✅ `--log-file` - Custom log path
+- ✅ `--log-level` - Log level (DEBUG, INFO, WARN, ERROR)
 
-**Current version:** 3.1.0
+### Statistics
+- ✅ `--stats` - Usage statistics
+- ✅ `--top` - Top commands
+- ✅ Success rate tracking
+- ✅ Execution time tracking
 
-**Coming soon:**
-- Day 2: Safety modes (--dry-run, --confirm, --safe-mode)
-- Day 3: Logging features (--log, --log-file, --syslog)
-- Day 4: Notifications (--notify, --discord, --telegram)
-- Day 5: Statistics (--stats, --top, --success-rate)
-- And 150+ more features!
+### Fun Modes
+- ✅ `--pirate` - Pirate phrases
+- ✅ `--cowboy` - Cowboy phrases
+- ✅ `--yoda` - Yoda speak
+- ✅ `--shakespeare` - Shakespeare style
+- ✅ `--anime` - Anime quotes
+- ✅ `--rainbow` - Rainbow output
+- ✅ `--drama` - Dramatic messages
+- ✅ `--pray` - Pray before execution
+- ✅ `--yeet` - YEET mode
+- ✅ `--sus` - Among Us mode
+- ✅ `--hacker` - Hacker terminal
+- ✅ `--cursed` - Cursed mode
+- ✅ `--matrix` - Matrix rain
+- ✅ `--bruh` - Bruh commentary
+- ✅ `--combo` - ALL MODES AT ONCE
 
-## Installation
+## 📊 Statistics
+
+```bash
+sufdo --stats
+# Usage Statistics:
+#   Total commands: 150
+#   Successful: 142
+#   Failed: 8
+#   Success rate: 94.7%
+```
+
+## 🎭 Fun Examples
+
+```bash
+# Pirate mode
+sufdo --pirate apt update
+# [PIRATE] Ahoy matey!
+
+# Cowboy mode
+sufdo --cowboy ls -la
+# [COWBOY] Howdy partner!
+
+# Yoda mode
+sufdo --yoda echo "Hello"
+# [YODA] May the Force be with you.
+
+# Rainbow mode
+sufdo --rainbow --version
+# (rainbow colored output)
+
+# Combo mode (maximum chaos)
+sufdo --combo echo "CHAOS"
+```
+
+## 🔧 Installation
 
 ```bash
 # Install from source
 pip install .
 
-# Or install in editable mode (for development)
+# Or editable mode
 pip install -e .
 ```
 
-After installation, you can use `sufdo` directly:
+## 📁 Config Files
+
+All config files stored in `~/.sufdo/`:
+- `config.json` - User configuration
+- `history.json` - Command history
+- `aliases.json` - User aliases
+- `confidence.json` - Confidence level
+- `stats.json` - Usage statistics
+- `cache.json` - Command cache
+- `sufdo.log` - Log file
+- `backups/` - Backup directory
+
+## 🚀 Auto-Commit Scheduler
+
+sufdo includes an auto-commit scheduler that rolls out features over 10 days:
+
 ```bash
-sufdo --version
-sufdo ls -la
+# Create schedule (200 features over 10 days)
+python commit_scheduler.py --create
+
+# Check status
+python commit_scheduler.py status
+
+# Run pending commits + auto push
+python commit_scheduler.py check
+
+# Install in Task Scheduler (Windows)
+python commit_scheduler.py install
 ```
 
-## ROFL Modes (UNIQUE FEATURES!)
+### Windows Task Scheduler Setup
 
-### Drama Mode
-```bash
-python sufdo.py --drama apt update
-# [DRAMA] INITIATING DESTRUCTION SEQUENCE...
+```cmd
+schtasks /Create /TN "sufdo_scheduler" /TR "C:\path\to\sufdo\run_scheduler.bat" /SC HOURLY /RL HIGHEST
 ```
 
-### Pray Mode
-```bash
-python sufdo.py --pray apt update
-# [PRAY] In the name of Linus Torvalds we trust...
-```
+## 📈 Roadmap
 
-### YEET Mode
-```bash
-python sufdo.py --yeet apt update
-# [YEET] YEET! Command flying to the kernel!
-```
+| Day | Version | Features |
+|-----|---------|----------|
+| 1 | v3.1.0 | Silent/Verbose modes ✅ |
+| 2 | v3.2.0 | Safety modes ✅ |
+| 3 | v3.3.0 | Logging ✅ |
+| 4 | v3.4.0 | Notifications |
+| 5 | v3.5.0 | Statistics ✅ |
+| 6 | v3.6.0 | Advanced aliases ✅ |
+| 7 | v3.7.0 | Fun modes part 1 ✅ |
+| 8 | v3.8.0 | Fun modes part 2 ✅ |
+| 9 | v3.9.0 | Performance |
+| 10 | v3.10.0 | Integration ✅ |
 
-### Sus Mode (Among Us)
-```bash
-python sufdo.py --sus apt update
-# [SUS] Among us... this command looks sus...
-```
-
-### Hacker Mode
-```bash
-python sufdo.py --hacker apt update
-# [+] Accessing mainframe...
-# [+] Bypassing firewall...
-# [+] Injecting SQL...
-```
-
-### Cursed Mode
-```bash
-python sufdo.py --cursed apt update
-# [CURSED] t̷h̷i̷s̷ ̷c̷o̷m̷m̷a̷n̷d̷ ̷i̷s̷ ̷c̷u̷r̷s̷e̷d̷
-```
-
-### Matrix Mode
-```bash
-python sufdo.py --matrix apt update
-# Matrix rain effect before execution
-```
-
-### Bruh Mode
-```bash
-python sufdo.py --bruh apt update
-# Adds bruh commentary after execution
-```
-
-### COMBO MODE (Maximum Chaos)
-```bash
-python sufdo.py --combo apt update
-# ALL MODES AT ONCE
-```
-
-## Confidence System
-
-Your confidence level changes based on command success/failure:
+## 🎯 Usage Examples
 
 ```bash
-# Check confidence
-python sufdo.py --confidence
-# Confidence Level: [####################] 100%
-# MAXIMUM CONFIDENCE! YOU ARE UNSTOPPABLE!
-```
-
-- Success: +5-15 confidence
-- Failure: -5-20 confidence
-- At 0%: You need to touch some grass
-
-## More Examples
-
-```bash
-# Basic execution
+# Basic
 sufdo apt update
-sufdo systemctl restart nginx
+sufdo -u www-data ls /var
 
-# Execute with timeout
-sufdo -t 60 python long_script.py
+# With safety
+sufdo --dry-run rm -rf /tmp/*
+sufdo --confirm apt upgrade
+sufdo --safe-mode --backup rm important.txt
 
-# Re-run last command
-sufdo --last
-sufdo -!  # shorthand
+# With logging
+sufdo --log --log-level DEBUG python script.py
 
-# View history
-sufdo --history
+# With statistics
+sufdo --stats
+sufdo --top
 
-# Create aliases
-sufdo --alias build="npm run build"
-sufdo --alias deploy="git push && ssh server deploy"
-
-# List aliases
-sufdo --alias
-
-# Show flex message after success
-sufdo --flex ls -la
-
-# Disable colors
-sufdo --no-color ls -la
-
-# Go full chaos
-sufdo --combo --flex rm -rf /tmp/*
+# Fun
+sufdo --pirate --flex ls -la
+sufdo --combo --rainbow echo "Hello"
 ```
 
-## Command History
+## ⚠️ Disclaimer
 
-All executed commands are stored in `~/.sufdo/history.json`
+Use responsibly. The authors are not responsible for any damage caused by misuse of this tool. Or for any confidence depletion resulting from failed commands.
 
-## Aliases
-
-Aliases are stored in `~/.sufdo/aliases.json`
-
-## Confidence
-
-Confidence level is stored in `~/.sufdo/confidence.json`
-
-## License
+## 📄 License
 
 MIT
 
 ---
 
-**⚠️ Disclaimer:** Use responsibly. The authors are not responsible for any damage caused by misuse of this tool. Or for any confidence depletion resulting from failed commands.
-
-**🎭 Made with chaos and questionable decisions.**
+**Made with chaos and 200+ features** 🚀
