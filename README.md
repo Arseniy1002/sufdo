@@ -14,6 +14,23 @@ A sudo-like utility for executing commands with elevated privileges. Because som
 - Flex messages after successful execution
 - Colored output
 - **Confidence system** - your confidence goes up/down based on command success
+- **Silent/Verbose modes** - control output verbosity
+- **Debug/Trace modes** - detailed debugging information
+- **Logging** - log all commands to file
+- **Auto-commit scheduler** - 200 features rolling out over 10 days
+
+## Roadmap
+
+See [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) for the full roadmap.
+
+**Current version:** 3.1.0
+
+**Coming soon:**
+- Day 2: Safety modes (--dry-run, --confirm, --safe-mode)
+- Day 3: Logging features (--log, --log-file, --syslog)
+- Day 4: Notifications (--notify, --discord, --telegram)
+- Day 5: Statistics (--stats, --top, --success-rate)
+- And 150+ more features!
 
 ## Installation
 
