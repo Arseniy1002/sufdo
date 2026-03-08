@@ -1,6 +1,6 @@
-# sufdo v4.0.0 - Ultimate Edition
+# sufdo v4.2.0 - Ultimate Edition
 
-**Super User Fkin Do** - The most feature-rich sudo alternative ever created.
+**Super User Fkin Do** — A sudo-like utility for executing commands with elevated privileges.
 
 > Because sometimes you just need to get shit done. With style.
 
@@ -8,10 +8,11 @@
 
 - **100+** command-line flags
 - **200+** individual features
-- **15** fun modes
-- **10** safety features
+- **17+** fun modes
+- **10+** safety features
 - **5** notification methods
-- **Unlimited** swag
+- **AI-powered** error analysis
+- **UAC elevation** for Windows
 
 ## 📦 Installation
 
@@ -19,12 +20,38 @@
 pip install -e .
 ```
 
-## 🚀 Features by Category
+## 🚀 Quick Start
+
+```bash
+# Basic usage
+sufdo apt update
+
+# With safety features
+sufdo --safe-mode rm -rf /tmp/*
+
+# With notifications
+sufdo --notify apt upgrade
+
+# With AI error analysis
+sufdo --ai gpt python script.py
+```
+
+## 🔧 Features by Category
+
+### 🤖 AI Features (6 flags)
+| Flag | Description |
+|------|-------------|
+| `--ai` | AI error analysis (gpt/gemini/openrouter/deepseek) |
+| `--ai-config` | Configure AI models interactively |
+| `--ai-list` | List configured AI models |
+| `--ai-default` | Set default AI model |
+| `--ai-ask` | Ask AI a question |
+| `--ai-add` | Add custom AI model |
 
 ### 🔇 Silent/Verbose Modes (4 flags)
 | Flag | Description |
 |------|-------------|
-| `--silent`, `-q`, `--quiet` | Silent mode - only errors |
+| `--silent`, `-q`, `--quiet` | Silent mode — errors only |
 | `--verbose`, `-V` | Detailed output |
 | `--debug` | Debug information |
 | `--trace` | Execution tracing |
@@ -32,11 +59,11 @@ pip install -e .
 ### 🛡️ Safety Modes (8 flags)
 | Flag | Description |
 |------|-------------|
-| `--dry-run` | Preview without executing |
+| `--dry-run` | Preview without execution |
 | `--confirm` | Ask for confirmation |
 | `--safe-mode` | Block destructive commands |
 | `--no-destructive` | Alias for safe-mode |
-| `--backup` | Create backup before |
+| `--backup` | Create backup before operations |
 | `--restore` | Restore from backup |
 | `--list-backups` | List all backups |
 | `--cleanup-backups` | Clean old backups |
@@ -77,10 +104,9 @@ pip install -e .
 | `--alias-import` | Import from JSON |
 | `--alias-export` | Export to JSON |
 | `--alias-share` | Share via gist |
-| `--alias-preset` | Preset packages |
-| Presets: `git`, `docker`, `npm`, `python` |
+| `--alias-preset` | Preset packages (git, docker, npm, python) |
 
-### 🎭 Fun Modes (15 flags)
+### 🎭 Fun Modes (17 flags)
 | Flag | Description |
 |------|-------------|
 | `--pirate` | Pirate phrases 🏴‍☠️ |
@@ -111,7 +137,7 @@ pip install -e .
 | `--priority` | Priority (low/normal/high) |
 | `--batch` | Batch file execution |
 
-### 🔧 Integration (8 flags)
+### 🔧 Integration (10 flags)
 | Flag | Description |
 |------|-------------|
 | `--profile` | Use config profile |
@@ -122,18 +148,18 @@ pip install -e .
 | `--completion` | Shell completion (bash/zsh/fish) |
 | `--validate` | Validate command |
 | `--undo` | Undo last command |
+| `--admin` | Request UAC elevation (Windows) |
+| `--pkg` | Use system package manager |
 
-### 📜 History & Core (10 flags)
+### 📜 History & Core (6 flags)
 | Flag | Description |
 |------|-------------|
 | `--history` | Command history |
-| `--last`, `-!` | Re-run last |
+| `--last`, `-!` | Re-run last command |
 | `--user`, `-u` | Run as user |
 | `--version`, `-v` | Show version |
-| `--timeout`, `-t` | Timeout seconds |
+| `--timeout`, `-t` | Timeout in seconds |
 | `--flex` | Flex message |
-| `--no-color` | Disable colors |
-| `--command` | Command to execute |
 
 ## 💡 Examples
 
@@ -148,6 +174,24 @@ sufdo -u www-data ls /var/www
 sufdo --dry-run rm -rf /tmp/*
 sufdo --confirm --backup apt upgrade
 sufdo --safe-mode rm important.txt  # Blocked!
+```
+
+### AI Error Analysis
+```bash
+# Configure AI models
+sufdo --ai-config
+
+# List configured models
+sufdo --ai-list
+
+# Set default model
+sufdo --ai-default gpt
+
+# Ask AI a question
+sufdo --ai-ask "How do I fix permission denied?"
+
+# Auto-analyze command errors
+sufdo --ai python broken_script.py
 ```
 
 ### Maximum Fun
@@ -235,6 +279,12 @@ sufdo --env-set API_KEY secret123
 sufdo --env python app.py
 ```
 
+### Windows UAC Elevation
+```bash
+# Request administrator privileges
+sufdo --admin dir C:\Windows\System32
+```
+
 ## 📁 Config Files
 
 All stored in `~/.sufdo/`:
@@ -248,6 +298,7 @@ All stored in `~/.sufdo/`:
 | `stats.json` | Usage statistics |
 | `cache.json` | Command cache |
 | `webhooks.json` | Notification webhooks |
+| `ai_models.json` | AI models configuration |
 | `.env` | Environment variables |
 | `sufdo.log` | Log file |
 | `backups/` | Backup directory |
@@ -273,6 +324,15 @@ All stored in `~/.sufdo/`:
 ### Russian 🇷🇺
 > "Ё-моё!", "Ёперный театр!", "Ёлки-палки!"
 
+### Hacker 💻
+> "[+] Accessing mainframe...", "[+] Bypassing firewall...", "[+] Root access: GRANTED"
+
+### Among Us 👨‍🚀
+> "Among us... this command looks sus...", "Impostor detected in your command line..."
+
+### YEET 🚀
+> "YEET! Command flying to the kernel!", "YEET! Gone in 60 seconds!"
+
 ## ⚠️ Disclaimer
 
 Use responsibly. The authors are not responsible for:
@@ -291,4 +351,4 @@ MIT
 
 **GitHub:** https://github.com/Arseniy1002/sufdo
 
-**Version:** 4.0.0 Ultimate Edition
+**Version:** 4.2.0 Ultimate Edition

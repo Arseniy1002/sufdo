@@ -5,7 +5,7 @@ sufdo - Super User Fkin Do - Ultimate Edition
 A sudo-like utility for executing commands with elevated privileges.
 Because sometimes you just need to get shit done.
 
-Version: 4.0.0 - Ultimate Edition (ALL FEATURES)
+Version: 4.2.0 - Ultimate Edition (ALL FEATURES)
 """
 
 import sys
@@ -32,6 +32,15 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 
+# Initialize ctypes on Windows for admin privileges
+if sys.platform == "win32":
+    try:
+        import ctypes
+        from ctypes import wintypes
+    except ImportError:
+        pass
+
+
 # Config paths
 SUFDO_DIR = Path.home() / ".sufdo"
 HISTORY_FILE = SUFDO_DIR / "history.json"
@@ -45,6 +54,7 @@ BACKUP_DIR = SUFDO_DIR / "backups"
 PROFILES_DIR = SUFDO_DIR / "profiles"
 ENV_FILE = SUFDO_DIR / ".env"
 WEBHOOKS_FILE = SUFDO_DIR / "webhooks.json"
+AI_CONFIG_FILE = SUFDO_DIR / "ai_models.json"
 
 # Colors
 class Colors:
@@ -159,6 +169,187 @@ def save_webhooks(webhooks: Dict):
     ensure_config_dir()
     with open(WEBHOOKS_FILE, "w", encoding="utf-8") as f:
         json.dump(webhooks, f, indent=2, ensure_ascii=False)
+
+
+def load_ai_config() -> Dict:
+    """Load AI models configuration."""
+    if not AI_CONFIG_FILE.exists():
+        return {
+            "models": {},
+            "default": None
+        }
+    try:
+        with open(AI_CONFIG_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except:
+        return {"models": {}, "default": None}
+
+
+def save_ai_config(config: Dict):
+    """Save AI models configuration."""
+    ensure_config_dir()
+    with open(AI_CONFIG_FILE, "w", encoding="utf-8") as f:
+        json.dump(config, f, indent=2, ensure_ascii=False)
+
+
+def get_default_ai_models() -> List[Dict]:
+    """Get default AI model presets."""
+    return [
+        {
+            "name": "gpt-4o",
+            "alias": "gpt",
+            "api_key": "",
+            "api_url": "https://api.openai.com/v1/chat/completions",
+            "provider": "openai"
+        },
+        {
+            "name": "gemini-2.0-flash",
+            "alias": "gemini",
+            "api_key": "",
+            "api_url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+            "provider": "google"
+        },
+        {
+            "name": "meta-llama/llama-3.3-70b-instruct",
+            "alias": "openrouter",
+            "api_key": "",
+            "api_url": "https://openrouter.ai/api/v1/chat/completions",
+            "provider": "openrouter"
+        },
+        {
+            "name": "deepseek-chat",
+            "alias": "deepseek",
+            "api_key": "",
+            "api_url": "https://api.deepseek.com/chat/completions",
+            "provider": "deepseek"
+        }
+    ]
+
+
+def query_ai(model_config: Dict, prompt: str) -> Optional[str]:
+    """
+    Query AI model with the given prompt.
+    Returns the response text or None on error.
+    """
+    try:
+        api_url = model_config.get("api_url", "")
+        api_key = model_config.get("api_key", "")
+        provider = model_config.get("provider", "openai")
+        model_name = model_config.get("name", "")
+        
+        if not api_key:
+            return f"{Colors.RED}[AI] API key not configured for {model_config.get('alias', 'model')}{Colors.RESET}"
+        
+        headers = {
+            "Content-Type": "application/json",
+        }
+        
+        if provider in ["openai", "openrouter", "deepseek"]:
+            headers["Authorization"] = f"Bearer {api_key}"
+            if provider == "openrouter":
+                headers["HTTP-Referer"] = "https://github.com/Arseniy1002/sufdo"
+                headers["X-Title"] = "sufdo"
+            
+            data = {
+                "model": model_name,
+                "messages": [
+                    {"role": "system", "content": "You are a helpful terminal assistant. Be concise and provide practical solutions."},
+                    {"role": "user", "content": prompt}
+                ],
+                "max_tokens": 500,
+                "temperature": 0.7
+            }
+            
+            req = urllib.request.Request(
+                api_url,
+                data=json.dumps(data).encode('utf-8'),
+                headers=headers,
+                method='POST'
+            )
+            
+            with urllib.request.urlopen(req, timeout=30) as response:
+                result = json.loads(response.read().decode('utf-8'))
+                
+            if provider == "google":
+                return result.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "No response")
+            else:
+                return result.get("choices", [{}])[0].get("message", {}).get("content", "No response")
+                
+        elif provider == "google":
+            data = {
+                "contents": [{
+                    "parts": [{"text": prompt}]
+                }],
+                "generationConfig": {
+                    "maxOutputTokens": 500,
+                    "temperature": 0.7
+                }
+            }
+            
+            req = urllib.request.Request(
+                f"{api_url}?key={api_key}",
+                data=json.dumps(data).encode('utf-8'),
+                headers={"Content-Type": "application/json"},
+                method='POST'
+            )
+            
+            with urllib.request.urlopen(req, timeout=30) as response:
+                result = json.loads(response.read().decode('utf-8'))
+                
+            return result.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "No response")
+        else:
+            return f"{Colors.RED}[AI] Unknown provider: {provider}{Colors.RESET}"
+            
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode('utf-8', errors='replace') if e.fp else ""
+        return f"{Colors.RED}[AI] API error ({e.code}): {error_body[:200]}{Colors.RESET}"
+    except urllib.error.URLError as e:
+        return f"{Colors.RED}[AI] Network error: {e.reason}{Colors.RESET}"
+    except Exception as e:
+        return f"{Colors.RED}[AI] Error: {e}{Colors.RESET}"
+
+
+def analyze_command_error(command: str, stdout: str, stderr: str, returncode: int, model_alias: str = None) -> str:
+    """
+    Analyze a command error using AI.
+    Returns AI's analysis or error message.
+    """
+    ai_config = load_ai_config()
+    
+    if not ai_config.get("models"):
+        return f"{Colors.YELLOW}[AI] No AI models configured. Run: sufdo --ai-config{Colors.RESET}"
+    
+    # Get model config
+    model_config = None
+    if model_alias and model_alias in ai_config["models"]:
+        model_config = ai_config["models"][model_alias]
+    elif ai_config.get("default") and ai_config["default"] in ai_config["models"]:
+        model_config = ai_config["models"][ai_config["default"]]
+    else:
+        # Use first available model
+        model_config = list(ai_config["models"].values())[0]
+    
+    # Build prompt
+    prompt = f"""Analyze this command error and provide a brief solution:
+
+Command: {command}
+Exit Code: {returncode}
+
+Stdout:
+{stdout[:500] if stdout else "(empty)"}
+
+Stderr:
+{stderr[:1000] if stderr else "(empty)"}
+
+Provide:
+1. What went wrong (1 sentence)
+2. How to fix it (1-2 steps)
+3. Alternative command if applicable
+
+Be concise."""
+
+    print(f"{Colors.CYAN}[AI] Analyzing error with {model_config.get('alias', 'AI')}...{Colors.RESET}")
+    return query_ai(model_config, prompt)
 
 
 def load_env() -> Dict:
@@ -478,17 +669,95 @@ def send_notification(title: str, message: str, sound: bool = False):
     """Send system notification."""
     try:
         if sys.platform == "win32":
-            import ctypes
             ctypes.windll.user32.MessageBoxW(0, f"{title}\n\n{message}", "sufdo", 0x40)
         elif sys.platform == "darwin":
             os.system(f'osascript -e \'display notification "{message}" with title "{title}"\'')
         else:
             os.system(f'notify-send "{title}" "{message}"')
-        
+
         if sound:
             print('\a')
     except:
         pass
+
+
+def is_admin_windows() -> bool:
+    """Check if running as administrator on Windows."""
+    if sys.platform != "win32":
+        return False
+    try:
+        return ctypes.windll.shell32.IsUserAnAdmin() != 0
+    except:
+        return False
+
+
+def request_elevation_windows() -> bool:
+    """
+    Request elevation on Windows via UAC prompt.
+    Re-launches PowerShell as Administrator with command history.
+    Returns True if already admin, False otherwise (as current process exits).
+    """
+    if sys.platform != "win32":
+        return True
+
+    if is_admin_windows():
+        return True
+
+    # Not running as admin - request elevation via UAC
+    print(f"{Colors.YELLOW}[SUDO] Requesting administrator privileges...{Colors.RESET}")
+    
+    try:
+        # Get command history for display in new window
+        history_output = ""
+        if HISTORY_FILE.exists():
+            try:
+                with open(HISTORY_FILE, encoding="utf-8") as f:
+                    history = json.load(f)
+                    if history:
+                        last_cmd = history[-1].get("command", "")
+                        if last_cmd:
+                            history_output = f"Previous command: {last_cmd}"
+            except:
+                pass
+        
+        # Build PowerShell command to re-run sufdo with admin rights
+        # Escape special characters for PowerShell
+        script_path = os.path.abspath(__file__).replace("'", "''")
+        args_escaped = ' '.join(sys.argv[1:]).replace("'", "''")
+        
+        ps_command = (
+            "Write-Host '[SUDO] Elevated PowerShell session' -ForegroundColor Yellow; "
+            f"Write-Host '{history_output}' -ForegroundColor Cyan; "
+            "Write-Host ''; "
+            f"& '{sys.executable}' '{script_path}' {args_escaped}"
+        )
+        
+        # Use ShellExecuteW with 'runas' to trigger UAC and open new PowerShell
+        result = ctypes.windll.shell32.ShellExecuteW(
+            None,           # hwnd
+            "runas",       # lpOperation - request elevation
+            "powershell",  # lpFile
+            f"-NoExit -Command \"{ps_command}\"",  # lpParameters - -NoExit keeps window open
+            None,           # lpDirectory
+            1               # nShowCmd (SW_SHOWNORMAL)
+        )
+        
+        # ShellExecuteW returns > 32 on success
+        if result > 32:
+            # Elevation requested - close current window
+            print(f"{Colors.GREEN}[SUDO] Opening elevated PowerShell...{Colors.RESET}")
+            time.sleep(0.5)
+            # Close current console window
+            os._exit(0)
+        else:
+            print(f"{Colors.RED}[SUDO] UAC cancelled or failed (error: {result}){Colors.RESET}")
+            return False
+            
+    except Exception as e:
+        print(f"{Colors.RED}[SUDO] Elevation error: {e}{Colors.RESET}")
+        return False
+    
+    return True
 
 
 def print_history():
@@ -770,19 +1039,21 @@ def clear_cache():
 def execute_parallel(commands: List[str], max_workers: int = 4) -> List[Dict]:
     """Execute commands in parallel."""
     results = []
-    
+
     def run_cmd(cmd):
         try:
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=60)
-            return {"command": cmd, "stdout": result.stdout, "stderr": result.stderr, "returncode": result.returncode}
+            result = subprocess.run(cmd, shell=True, capture_output=True, timeout=60)
+            stdout = result.stdout.decode('utf-8', errors='replace') if result.stdout else ''
+            stderr = result.stderr.decode('utf-8', errors='replace') if result.stderr else ''
+            return {"command": cmd, "stdout": stdout, "stderr": stderr, "returncode": result.returncode}
         except Exception as e:
             return {"command": cmd, "error": str(e)}
-    
+
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {executor.submit(run_cmd, cmd): cmd for cmd in commands}
         for future in as_completed(futures):
             results.append(future.result())
-    
+
     return results
 
 
@@ -816,13 +1087,13 @@ def load_batch_file(filepath: str) -> List[str]:
 def execute_batch(commands: List[str], stop_on_error: bool = True, parallel: bool = False) -> List[Dict]:
     """Execute batch of commands."""
     results = []
-    
+
     if parallel:
         return execute_parallel(commands)
-    
+
     for cmd in commands:
         try:
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=60)
+            result = subprocess.run(cmd, shell=True, capture_output=True, timeout=60)
             results.append({"command": cmd, "returncode": result.returncode})
             if result.returncode != 0 and stop_on_error:
                 break
@@ -830,46 +1101,80 @@ def execute_batch(commands: List[str], stop_on_error: bool = True, parallel: boo
             results.append({"command": cmd, "error": str(e)})
             if stop_on_error:
                 break
-    
+
     return results
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        prog="sufdo",
-        description="Super User Fkin Do - Execute commands with elevated privileges",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  sufdo apt update                    Run command as root
-  sufdo -u www-data ls /var           Run as specific user
-  sufdo --flex ls -la                 Show flex message
+def get_os_package_manager() -> str:
+    """Get the appropriate package manager command for the current OS."""
+    if sys.platform == "win32":
+        return "winget install"
+    elif sys.platform == "darwin":
+        return "brew install"
+    else:  # Linux
+        # Check for Arch-based systems
+        if os.path.exists("/etc/arch-release"):
+            return "pacman -S"
+        elif os.path.exists("/etc/debian_version") or os.path.exists("/etc/apt/sources.list"):
+            return "apt install"
+        elif os.path.exists("/etc/redhat-release") or os.path.exists("/etc/fedora-release"):
+            return "dnf install"
+        elif os.path.exists("/etc/alpine-release"):
+            return "apk add"
+        elif os.path.exists("/etc/os-release"):
+            try:
+                with open("/etc/os-release", encoding="utf-8") as f:
+                    content = f.read().lower()
+                    if "arch" in content:
+                        return "pacman -S"
+                    elif "debian" in content or "ubuntu" in content:
+                        return "apt install"
+                    elif "fedora" in content:
+                        return "dnf install"
+                    elif "alpine" in content:
+                        return "apk add"
+            except:
+                pass
+        return "apt install"  # Default to apt for Linux
+
+
+def get_examples_for_os() -> str:
+    """Get example commands appropriate for the current OS."""
+    pkg_mgr = get_os_package_manager()
+    pkg_name = "htop" if sys.platform != "win32" else "python.python311"
+    
+    if sys.platform == "win32":
+        return f"""Examples:
+  sufdo {pkg_mgr} {pkg_name}          Install package
+  sufdo dir C:\\Users                 List directory
+  sufdo -u Administrator whoami       Run as specific user
+  sufdo --flex dir                    Show flex message
   sufdo --history                     Show command history
   sufdo --last                        Re-run last command
   sufdo --alias build="npm run build" Create alias
 
 SILENT/VERBOSE:
-  sufdo --silent ls                   Silent mode
-  sufdo --verbose ls                  Verbose output
-  sufdo --debug ls                    Debug info
-  sufdo --trace ls                    Trace execution
+  sufdo --silent dir                  Silent mode
+  sufdo --verbose dir                 Verbose output
+  sufdo --debug dir                   Debug info
+  sufdo --trace dir                   Trace execution
 
 SAFETY:
-  sufdo --dry-run apt                 Preview only
-  sufdo --confirm apt                 Ask confirmation
-  sufdo --safe-mode apt               Block dangerous
-  sufdo --backup apt                  Backup first
+  sufdo --dry-run {pkg_mgr}           Preview only
+  sufdo --confirm {pkg_mgr}           Ask confirmation
+  sufdo --safe-mode {pkg_mgr}         Block dangerous
+  sufdo --backup {pkg_mgr}            Backup first
 
 LOGGING:
-  sufdo --log apt                     Log to file
-  sufdo --log-file /tmp/sufdo.log     Custom log
+  sufdo --log {pkg_mgr}               Log to file
+  sufdo --log-file C:\\temp\\sufdo.log  Custom log
   sufdo --syslog                      System log
 
 NOTIFICATIONS:
-  sufdo --notify apt                  Toast notification
-  sufdo --discord apt                 Discord webhook
-  sufdo --telegram apt                Telegram message
-  sufdo --email apt                   Email notification
+  sufdo --notify {pkg_mgr}            Toast notification
+  sufdo --discord {pkg_mgr}           Discord webhook
+  sufdo --telegram {pkg_mgr}          Telegram message
+  sufdo --email {pkg_mgr}             Email notification
 
 STATISTICS:
   sufdo --stats                       Show statistics
@@ -883,25 +1188,156 @@ ALIASES:
   sufdo --alias-export file.json      Export aliases
 
 FUN MODES:
-  sufdo --pirate apt                  Pirate mode
-  sufdo --cowboy apt                  Cowboy mode
-  sufdo --yoda apt                    Yoda mode
-  sufdo --shakespeare apt             Shakespeare
-  sufdo --anime apt                   Anime mode
-  sufdo --russian apt                 Russian mode
-  sufdo --rainbow apt                 Rainbow output
-  sufdo --dark apt                    Dark theme
-  sufdo --combo apt                   ALL MODES!
+  sufdo --pirate {pkg_mgr}            Pirate mode
+  sufdo --cowboy {pkg_mgr}            Cowboy mode
+  sufdo --yoda {pkg_mgr}              Yoda mode
+  sufdo --shakespeare {pkg_mgr}       Shakespeare
+  sufdo --anime {pkg_mgr}             Anime mode
+  sufdo --russian {pkg_mgr}           Russian mode
+  sufdo --rainbow {pkg_mgr}           Rainbow output
+  sufdo --dark {pkg_mgr}              Dark theme
+  sufdo --combo {pkg_mgr}             ALL MODES!
 
 ADVANCED:
-  sufdo --cache apt                   Use cache
+  sufdo --cache {pkg_mgr}             Use cache
   sufdo --parallel cmd1 cmd2          Parallel execution
   sufdo --background cmd              Background job
   sufdo --batch file.txt              Batch execution
   sufdo --profile dev                 Use profile
   sufdo --undo                        Undo last command
-  sufdo --validate cmd                Validate command
-        """
+  sufdo --validate cmd                Validate command"""
+    elif sys.platform == "darwin":
+        return f"""Examples:
+  sufdo {pkg_mgr} {pkg_name}          Install package
+  sufdo -u www-data ls /var           Run as specific user
+  sufdo --flex ls -la                 Show flex message
+  sufdo --history                     Show command history
+  sufdo --last                        Re-run last command
+  sufdo --alias build="npm run build" Create alias
+
+SILENT/VERBOSE:
+  sufdo --silent ls                   Silent mode
+  sufdo --verbose ls                  Verbose output
+  sufdo --debug ls                    Debug info
+  sufdo --trace ls                    Trace execution
+
+SAFETY:
+  sufdo --dry-run {pkg_mgr}           Preview only
+  sufdo --confirm {pkg_mgr}           Ask confirmation
+  sufdo --safe-mode {pkg_mgr}         Block dangerous
+  sufdo --backup {pkg_mgr}            Backup first
+
+LOGGING:
+  sufdo --log {pkg_mgr}               Log to file
+  sufdo --log-file /tmp/sufdo.log     Custom log
+  sufdo --syslog                      System log
+
+NOTIFICATIONS:
+  sufdo --notify {pkg_mgr}            Toast notification
+  sufdo --discord {pkg_mgr}           Discord webhook
+  sufdo --telegram {pkg_mgr}          Telegram message
+  sufdo --email {pkg_mgr}             Email notification
+
+STATISTICS:
+  sufdo --stats                       Show statistics
+  sufdo --top                         Top commands
+  sufdo --export-stats                Export to JSON
+
+ALIASES:
+  sufdo --alias                       List aliases
+  sufdo --alias build="npm build"     Create alias
+  sufdo --alias-import file.json      Import aliases
+  sufdo --alias-export file.json      Export aliases
+
+FUN MODES:
+  sufdo --pirate {pkg_mgr}            Pirate mode
+  sufdo --cowboy {pkg_mgr}            Cowboy mode
+  sufdo --yoda {pkg_mgr}              Yoda mode
+  sufdo --shakespeare {pkg_mgr}       Shakespeare
+  sufdo --anime {pkg_mgr}             Anime mode
+  sufdo --russian {pkg_mgr}           Russian mode
+  sufdo --rainbow {pkg_mgr}           Rainbow output
+  sufdo --dark {pkg_mgr}              Dark theme
+  sufdo --combo {pkg_mgr}             ALL MODES!
+
+ADVANCED:
+  sufdo --cache {pkg_mgr}             Use cache
+  sufdo --parallel cmd1 cmd2          Parallel execution
+  sufdo --background cmd              Background job
+  sufdo --batch file.txt              Batch execution
+  sufdo --profile dev                 Use profile
+  sufdo --undo                        Undo last command
+  sufdo --validate cmd                Validate command"""
+    else:  # Linux
+        return f"""Examples:
+  sufdo {pkg_mgr} {pkg_name}          Install package
+  sufdo -u www-data ls /var           Run as specific user
+  sufdo --flex ls -la                 Show flex message
+  sufdo --history                     Show command history
+  sufdo --last                        Re-run last command
+  sufdo --alias build="npm run build" Create alias
+
+SILENT/VERBOSE:
+  sufdo --silent ls                   Silent mode
+  sufdo --verbose ls                  Verbose output
+  sufdo --debug ls                    Debug info
+  sufdo --trace ls                    Trace execution
+
+SAFETY:
+  sufdo --dry-run {pkg_mgr}           Preview only
+  sufdo --confirm {pkg_mgr}           Ask confirmation
+  sufdo --safe-mode {pkg_mgr}         Block dangerous
+  sufdo --backup {pkg_mgr}            Backup first
+
+LOGGING:
+  sufdo --log {pkg_mgr}               Log to file
+  sufdo --log-file /tmp/sufdo.log     Custom log
+  sufdo --syslog                      System log
+
+NOTIFICATIONS:
+  sufdo --notify {pkg_mgr}            Toast notification
+  sufdo --discord {pkg_mgr}           Discord webhook
+  sufdo --telegram {pkg_mgr}          Telegram message
+  sufdo --email {pkg_mgr}             Email notification
+
+STATISTICS:
+  sufdo --stats                       Show statistics
+  sufdo --top                         Top commands
+  sufdo --export-stats                Export to JSON
+
+ALIASES:
+  sufdo --alias                       List aliases
+  sufdo --alias build="npm build"     Create alias
+  sufdo --alias-import file.json      Import aliases
+  sufdo --alias-export file.json      Export aliases
+
+FUN MODES:
+  sufdo --pirate {pkg_mgr}            Pirate mode
+  sufdo --cowboy {pkg_mgr}            Cowboy mode
+  sufdo --yoda {pkg_mgr}              Yoda mode
+  sufdo --shakespeare {pkg_mgr}       Shakespeare
+  sufdo --anime {pkg_mgr}             Anime mode
+  sufdo --russian {pkg_mgr}           Russian mode
+  sufdo --rainbow {pkg_mgr}           Rainbow output
+  sufdo --dark {pkg_mgr}              Dark theme
+  sufdo --combo {pkg_mgr}             ALL MODES!
+
+ADVANCED:
+  sufdo --cache {pkg_mgr}             Use cache
+  sufdo --parallel cmd1 cmd2          Parallel execution
+  sufdo --background cmd              Background job
+  sufdo --batch file.txt              Batch execution
+  sufdo --profile dev                 Use profile
+  sufdo --undo                        Undo last command
+  sufdo --validate cmd                Validate command"""
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="sufdo",
+        description="Super User Fkin Do - Execute commands with elevated privileges",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=get_examples_for_os()
     )
     
     # Basic
@@ -997,9 +1433,19 @@ ADVANCED:
     parser.add_argument("--completion", type=str, choices=["bash", "zsh", "fish"], help="Shell completion")
     parser.add_argument("--validate", action="store_true", help="Validate command")
     parser.add_argument("--undo", action="store_true", help="Undo last")
+    parser.add_argument("--admin", action="store_true", help="Request administrator privileges (Windows UAC)")
+    
+    # AI
+    parser.add_argument("--ai", nargs="?", const="ask", metavar="QUESTION", help="Ask AI about command error")
+    parser.add_argument("--ai-config", action="store_true", help="Configure AI models")
+    parser.add_argument("--ai-list", action="store_true", help="List configured AI models")
+    parser.add_argument("--ai-default", type=str, metavar="ALIAS", help="Set default AI model")
+    parser.add_argument("--ai-ask", type=str, metavar="QUESTION", help="Ask AI a question")
+    parser.add_argument("--ai-add", nargs=5, metavar=("ALIAS", "PROVIDER", "MODEL", "URL", "KEY"), help="Add AI model")
     
     # Command
     parser.add_argument("command", nargs=argparse.REMAINDER, help="Command")
+    parser.add_argument("--pkg", action="store_true", help="Use system package manager (shows appropriate command for OS)")
 
     args = parser.parse_args()
 
@@ -1017,9 +1463,9 @@ ADVANCED:
 
     # Version
     if args.version:
-        ver = f"{Colors.BOLD}sufdo version 4.0.0{Colors.RESET}"
+        ver = f"{Colors.BOLD}sufdo version 4.2.0{Colors.RESET}"
         if args.rainbow:
-            ver = rainbow_text("sufdo version 4.0.0 - Ultimate Edition")
+            ver = rainbow_text("sufdo version 4.2.0 - Ultimate Edition")
         print(ver)
         print("Super User Fkin Do - Ultimate Edition")
         print("https://github.com/Arseniy1002/sufdo")
@@ -1193,6 +1639,115 @@ ADVANCED:
         print(f"{Colors.GREEN}[OK]{Colors.RESET} {args.env_set[0]}={args.env_set[1]}")
         sys.exit(0)
 
+    # AI Config
+    if args.ai_config:
+        ai_config = load_ai_config()
+        print(f"{Colors.BOLD}AI Models Configuration{Colors.RESET}")
+        print(f"{Colors.CYAN}Configure AI models for command error analysis{Colors.RESET}\n")
+        
+        # Show default models
+        default_models = get_default_ai_models()
+        print(f"{Colors.BOLD}Available presets:{Colors.RESET}")
+        for i, model in enumerate(default_models, 1):
+            configured = "✓" if model["alias"] in ai_config.get("models", {}) and ai_config["models"][model["alias"]].get("api_key") else "✗"
+            print(f"  {i}. {model['alias']} ({model['name']}) - {Colors.GREEN}configured{Colors.RESET}" if configured == "✓" else f"  {i}. {model['alias']} ({model['name']}) - {Colors.YELLOW}not configured{Colors.RESET}")
+        
+        print(f"\n{Colors.BOLD}To add a model:{Colors.RESET}")
+        print(f"  {Colors.CYAN}sufdo --ai-add <alias> <provider> <model_name> <api_url> <api_key>{Colors.RESET}")
+        print(f"\n{Colors.BOLD}Quick setup (interactive):{Colors.RESET}")
+        
+        for model in default_models:
+            if model["alias"] not in ai_config.get("models", {}):
+                response = input(f"\nConfigure {model['alias']} ({model['name']})? [y/N]: ")
+                if response.lower() == 'y':
+                    api_key = input(f"Enter API key for {model['alias']}: ").strip()
+                    if api_key:
+                        ai_config["models"][model["alias"]] = {
+                            "name": model["name"],
+                            "alias": model["alias"],
+                            "api_key": api_key,
+                            "api_url": model["api_url"],
+                            "provider": model["provider"]
+                        }
+                        print(f"{Colors.GREEN}[OK]{Colors.RESET} {model['alias']} configured!")
+        
+        save_ai_config(ai_config)
+        
+        # Set default if not set
+        if not ai_config.get("default") and ai_config.get("models"):
+            ai_config["default"] = list(ai_config["models"].keys())[0]
+            save_ai_config(ai_config)
+            print(f"\n{Colors.CYAN}[INFO] Set default model: {ai_config['default']}{Colors.RESET}")
+        
+        print(f"\n{Colors.GREEN}[OK]{Colors.RESET} AI configuration saved!")
+        sys.exit(0)
+
+    # AI List
+    if args.ai_list:
+        ai_config = load_ai_config()
+        if not ai_config.get("models"):
+            print(f"{Colors.YELLOW}[AI] No AI models configured. Run: sufdo --ai-config{Colors.RESET}")
+        else:
+            print(f"{Colors.BOLD}Configured AI Models:{Colors.RESET}")
+            for alias, config in ai_config["models"].items():
+                default_marker = " (default)" if alias == ai_config.get("default") else ""
+                key_status = "****" + config.get("api_key", "")[-4:] if config.get("api_key") else "NOT SET"
+                print(f"  {Colors.GREEN}{alias}{Colors.RESET}{default_marker}: {config.get('name')} [{config.get('provider')}]")
+                print(f"    API Key: {key_status}")
+                print(f"    URL: {config.get('api_url', 'N/A')[:60]}...")
+        sys.exit(0)
+
+    # AI Default
+    if args.ai_default:
+        ai_config = load_ai_config()
+        if args.ai_default not in ai_config.get("models", {}):
+            print(f"{Colors.RED}[FAIL]{Colors.RESET} Model '{args.ai_default}' not found")
+            print(f"{Colors.YELLOW}Available: {', '.join(ai_config.get('models', {}).keys())}{Colors.RESET}")
+        else:
+            ai_config["default"] = args.ai_default
+            save_ai_config(ai_config)
+            print(f"{Colors.GREEN}[OK]{Colors.RESET} Default model set to: {args.ai_default}")
+        sys.exit(0)
+
+    # AI Ask
+    if args.ai_ask:
+        ai_config = load_ai_config()
+        if not ai_config.get("models"):
+            print(f"{Colors.YELLOW}[AI] No AI models configured. Run: sufdo --ai-config{Colors.RESET}")
+            sys.exit(1)
+        
+        # Get model config
+        model_config = None
+        if ai_config.get("default") and ai_config["default"] in ai_config["models"]:
+            model_config = ai_config["models"][ai_config["default"]]
+        else:
+            model_config = list(ai_config["models"].values())[0]
+        
+        print(f"{Colors.CYAN}[AI] Asking {model_config.get('alias', 'AI')}...{Colors.RESET}")
+        response = query_ai(model_config, args.ai_ask)
+        print(f"\n{Colors.PURPLE}[AI Response]{Colors.RESET}")
+        print(response if response else f"{Colors.RED}No response from AI{Colors.RESET}")
+        sys.exit(0)
+
+    # AI Add
+    if args.ai_add:
+        ai_config = load_ai_config()
+        alias, provider, model, url, key = args.ai_add
+        ai_config["models"][alias] = {
+            "name": model,
+            "alias": alias,
+            "api_key": key,
+            "api_url": url,
+            "provider": provider
+        }
+        save_ai_config(ai_config)
+        print(f"{Colors.GREEN}[OK]{Colors.RESET} Added AI model: {alias} ({model})")
+        if not ai_config.get("default"):
+            ai_config["default"] = alias
+            save_ai_config(ai_config)
+            print(f"{Colors.CYAN}[INFO] Set as default model{Colors.RESET}")
+        sys.exit(0)
+
     # Completion
     if args.completion:
         if args.completion == "bash":
@@ -1247,6 +1802,13 @@ ADVANCED:
             print(f"{Colors.RED}[FAIL]{Colors.RESET} No previous command")
             sys.exit(1)
 
+    # Show package manager
+    if args.pkg:
+        pkg_mgr = get_os_package_manager()
+        print(f"{Colors.GREEN}[PKG]{Colors.RESET} System package manager: {Colors.BOLD}{pkg_mgr}{Colors.RESET}")
+        if not args.command:
+            sys.exit(0)
+
     if not args.command:
         parser.print_help()
         sys.exit(1)
@@ -1254,11 +1816,15 @@ ADVANCED:
     # Expand aliases
     aliases = load_aliases()
     cmd_str = " ".join(args.command) if isinstance(args.command, list) else args.command
-    
+
     if args.command and args.command[0] in aliases:
         expanded = aliases[args.command[0]] + " " + " ".join(args.command[1:])
         print(f"{Colors.YELLOW}[ALIAS] {args.command[0]} -> {expanded}{Colors.RESET}")
         cmd_str = expanded
+
+    # Always request admin privileges on Windows (like sudo)
+    if sys.platform == "win32":
+        request_elevation_windows()
 
     # Load profile
     if args.profile:
@@ -1379,35 +1945,38 @@ ADVANCED:
     try:
         if logger:
             logger.info(f"Executing: {cmd_str}")
-        
+
         result = subprocess.run(
             cmd_str,
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True,
             timeout=args.timeout
         )
 
         duration = (datetime.now() - start_time).total_seconds()
 
+        # Decode output with error handling
+        stdout = result.stdout.decode('utf-8', errors='replace') if result.stdout else ''
+        stderr = result.stderr.decode('utf-8', errors='replace') if result.stderr else ''
+
         # Output
         if args.silent:
-            if result.stderr:
-                print(result.stderr, end="", file=sys.stderr)
+            if stderr:
+                print(stderr, end="", file=sys.stderr)
         else:
-            output = result.stdout
+            output = stdout
             if args.rainbow:
-                output = rainbow_text(result.stdout)
+                output = rainbow_text(stdout)
             if args.dark:
-                output = dark_mode(result.stdout)
+                output = dark_mode(stdout)
             print(output, end="")
-            
-            if result.stderr:
+
+            if stderr:
                 if args.verbose:
-                    print(result.stderr, end="", file=sys.stderr)
+                    print(stderr, end="", file=sys.stderr)
                 elif result.returncode != 0:
-                    print(result.stderr, end="", file=sys.stderr)
+                    print(stderr, end="", file=sys.stderr)
 
         # Log and stats
         log_command(cmd_str, args.user, result.returncode, duration)
@@ -1455,6 +2024,29 @@ ADVANCED:
                     print(f"{Colors.RED}Confidence: {old}% -> {new}%{Colors.RESET}")
                 if args.bruh:
                     print(bruh_mode())
+
+            # AI error analysis
+            if args.ai:
+                question = args.ai if args.ai != "ask" else ""
+                if question:
+                    prompt = f"Command failed: {cmd_str}\n\nError: {stderr[:500] if stderr else 'Unknown error'}\n\nQuestion: {question}"
+                else:
+                    prompt = f"Command failed: {cmd_str}\n\nError: {stderr[:500] if stderr else 'Unknown error'}\n\nExplain what went wrong and how to fix it."
+                
+                ai_config = load_ai_config()
+                if ai_config.get("models"):
+                    model_config = None
+                    if ai_config.get("default") and ai_config["default"] in ai_config["models"]:
+                        model_config = ai_config["models"][ai_config["default"]]
+                    else:
+                        model_config = list(ai_config["models"].values())[0]
+                    
+                    print(f"{Colors.CYAN}[AI] Analyzing error with {model_config.get('alias', 'AI')}...{Colors.RESET}")
+                    response = query_ai(model_config, prompt)
+                    print(f"\n{Colors.PURPLE}[AI Analysis]{Colors.RESET}")
+                    print(response if response else f"{Colors.YELLOW}No AI response{Colors.RESET}")
+                else:
+                    print(f"{Colors.YELLOW}[AI] No AI models configured. Run: sufdo --ai-config{Colors.RESET}")
 
             # Error notifications
             if args.notify:
