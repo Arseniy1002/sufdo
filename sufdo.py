@@ -11,6 +11,8 @@ import subprocess
 import argparse
 import os
 import json
+import random
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -19,6 +21,7 @@ from pathlib import Path
 SUFDO_DIR = Path.home() / ".sufdo"
 HISTORY_FILE = SUFDO_DIR / "history.json"
 ALIASES_FILE = SUFDO_DIR / "aliases.json"
+CONFIDENCE_FILE = SUFDO_DIR / "confidence.json"
 
 # Colors
 class Colors:
@@ -28,8 +31,12 @@ class Colors:
     BLUE = "\033[94m"
     PURPLE = "\033[95m"
     CYAN = "\033[96m"
+    WHITE = "\033[97m"
     RESET = "\033[0m"
     BOLD = "\033[1m"
+    DIM = "\033[2m"
+    BLINK = "\033[5m"
+    REVERSE = "\033[7m"
 
 
 def ensure_config_dir():
@@ -98,11 +105,169 @@ def save_aliases(aliases):
         json.dump(aliases, f, indent=2)
 
 
-def expand_alias(command, aliases):
-    """Expand alias to actual command."""
-    if command and command[0] in aliases:
-        return aliases[command[0]] + " " + " ".join(command[1:])
-    return command
+def get_confidence():
+    """Get user's current confidence level."""
+    if not CONFIDENCE_FILE.exists():
+        return 100
+    
+    try:
+        with open(CONFIDENCE_FILE) as f:
+            data = json.load(f)
+            return data.get("level", 100)
+    except:
+        return 100
+
+
+def set_confidence(level):
+    """Set confidence level."""
+    ensure_config_dir()
+    with open(CONFIDENCE_FILE, "w") as f:
+        json.dump({"level": level}, f)
+
+
+def drama_mode():
+    """Print dramatic messages before execution."""
+    messages = [
+        "PREPARE FOR CHAOS...",
+        "INITIATING DESTRUCTION SEQUENCE...",
+        "WELCOME TO THE DANGER ZONE...",
+        "CHARGING THE ROOT POWER...",
+        "VOLCANIC COMMAND DETECTED...",
+        "YOUR SYSTEM MAY EXPERIENCE EXTREME POWER...",
+        "DRAMA LEVEL: MAXIMUM...",
+        "EMERGENCY PROTOCOLS ENGAGED...",
+    ]
+    print(f"{Colors.RED}{Colors.BOLD}[DRAMA] {random.choice(messages)}{Colors.RESET}")
+    time.sleep(0.5)
+
+
+def pray_mode():
+    """Pray before executing the command."""
+    prayers = [
+        "Dear Root Gods, bless this command...",
+        "In the name of Linus Torvalds we trust...",
+        "May your permissions be ever elevated...",
+        "Hail to the sudo in the sky...",
+        "Our Father, who art in /root, hallowed be thy name...",
+        "Buddha says: rm -rf / is enlightenment...",
+        "Allah akbar, command is great...",
+    ]
+    print(f"{Colors.PURPLE}[PRAY] {random.choice(prayers)}{Colors.RESET}")
+    time.sleep(0.3)
+
+
+def yeet_mode():
+    """YEET the command into existence."""
+    yeet_phrases = [
+        "YEET! Command flying to the kernel!",
+        "YEET! Gone in 60 seconds!",
+        "YEET! Bullseye!",
+        "YEET! Lightning fast!",
+        "YEET! Straight to hell!",
+    ]
+    print(f"{Colors.YELLOW}{Colors.BOLD}[YEET] {random.choice(yeet_phrases)}{Colors.RESET}")
+
+
+def sus_mode():
+    """Print suspicious messages."""
+    sus_messages = [
+        "Among us... this command looks sus...",
+        "Impostor detected in your command line...",
+        "Red is acting suspicious...",
+        "Emergency meeting called for this command...",
+        "Task: Execute. Location: /bin. Sus level: 100%",
+        "This command is not the impostor... or is it?",
+    ]
+    print(f"{Colors.RED}[SUS] {random.choice(sus_messages)}{Colors.RESET}")
+
+
+def bruh_mode():
+    """Bruh responses after execution."""
+    bruh_phrases = [
+        "bruh...",
+        "bruh moment",
+        "big brain time",
+        "bruh, really?",
+        "bruh, I've seen better",
+        "bruh, that's it?",
+        "bruh, my grandma executes faster",
+        "bruh, even Windows could do that",
+    ]
+    return f"{Colors.YELLOW}{random.choice(bruh_phrases)}{Colors.RESET}"
+
+
+def hacker_mode():
+    """Print hacker-style messages."""
+    hacker_texts = [
+        "[+] Accessing mainframe...",
+        "[+] Bypassing firewall...",
+        "[+] Injecting SQL...",
+        "[+] Downloading RAM...",
+        "[+] Mining Bitcoin...",
+        "[+] Hacking the Pentagon...",
+        "[+] Uploading virus...",
+        "[+] Root access: GRANTED",
+    ]
+    for text in hacker_texts[:random.randint(2, 4)]:
+        print(f"{Colors.GREEN}{text}{Colors.RESET}")
+        time.sleep(0.1)
+
+
+def cursed_mode():
+    """Cursed mode - weird output."""
+    cursed_texts = [
+        "t̷h̷i̷s̷ ̷c̷o̷m̷m̷a̷n̷d̷ ̷i̷s̷ ̷c̷u̷r̷s̷e̷d̷",
+        "your soul has been bound to this terminal",
+        "the demons are pleased with your choice",
+        "you have awakened the ancient ones",
+        "there is no turning back now",
+        "the void stares back at you",
+        "abandon all hope, ye who enter here",
+    ]
+    print(f"{Colors.DIM}{Colors.REVERSE}[CURSED] {random.choice(cursed_texts)}{Colors.RESET}")
+
+
+def matrix_rain():
+    """Display matrix-style rain briefly."""
+    matrix_chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    for _ in range(5):
+        line = ''.join(random.choice(matrix_chars) for _ in range(40))
+        print(f"{Colors.GREEN}{line}{Colors.RESET}")
+        time.sleep(0.05)
+
+
+def confidence_boost():
+    """Boost user's confidence."""
+    current = get_confidence()
+    new_level = min(100, current + random.randint(5, 15))
+    set_confidence(new_level)
+    return current, new_level
+
+
+def confidence_insult():
+    """Insult user's confidence."""
+    current = get_confidence()
+    new_level = max(0, current - random.randint(5, 20))
+    set_confidence(new_level)
+    return current, new_level
+
+
+def print_confidence():
+    """Print current confidence level."""
+    level = get_confidence()
+    bars = "#" * (level // 5) + "-" * (20 - level // 5)
+    print(f"{Colors.BOLD}Confidence Level:{Colors.RESET} [{bars}] {level}%")
+    
+    if level == 100:
+        print(f"{Colors.GREEN}MAXIMUM CONFIDENCE! YOU ARE UNSTOPPABLE!{Colors.RESET}")
+    elif level >= 75:
+        print(f"{Colors.GREEN}High confidence! Keep going!{Colors.RESET}")
+    elif level >= 50:
+        print(f"{Colors.YELLOW}Moderate confidence...{Colors.RESET}")
+    elif level >= 25:
+        print(f"{Colors.RED}Low confidence... need more sudo!{Colors.RESET}")
+    else:
+        print(f"{Colors.RED}CRITICAL: Confidence depleted! Touch some grass!{Colors.RESET}")
 
 
 def print_history():
@@ -139,8 +304,7 @@ def print_flex():
         "Target acquired and executed!",
         "Bow down to the super user!",
     ]
-    import random
-    print(f"{Colors.PURPLE}{random.choice(messages)}{Colors.RESET}")
+    print(f"{Colors.PURPLE}[FLEX] {random.choice(messages)}{Colors.RESET}")
 
 
 def main():
@@ -150,12 +314,23 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  sufdo apt update              Run command as root
-  sufdo -u www-data ls /var     Run as specific user
-  sufdo --flex ls -la           Show flex message after execution
-  sufdo --history               Show command history
-  sufdo --last                  Re-run last command
-  sufdo --alias build="npm run build"   Create an alias
+  sufdo apt update                    Run command as root
+  sufdo -u www-data ls /var           Run as specific user
+  sufdo --flex ls -la                 Show flex message after execution
+  sufdo --history                     Show command history
+  sufdo --last                        Re-run last command
+  sufdo --alias build="npm run build" Create an alias
+  
+ROFL MODES:
+  sufdo --drama apt update            Dramatic execution
+  sufdo --pray apt update             Pray before execution
+  sufdo --yeet apt update             YEET the command
+  sufdo --sus apt update              Suspicious mode
+  sufdo --hacker apt update           Hacker mode
+  sufdo --cursed apt update           Cursed mode
+  sufdo --matrix apt update           Matrix rain before execution
+  sufdo --bruh apt update             Bruh after execution
+  sufdo --confidence                  Show confidence level
         """
     )
     parser.add_argument(
@@ -201,6 +376,57 @@ Examples:
         help="Disable colored output"
     )
     parser.add_argument(
+        "--confidence",
+        action="store_true",
+        help="Show current confidence level"
+    )
+    # ROFL modes
+    parser.add_argument(
+        "--drama",
+        action="store_true",
+        help="Dramatic execution mode"
+    )
+    parser.add_argument(
+        "--pray",
+        action="store_true",
+        help="Pray before execution"
+    )
+    parser.add_argument(
+        "--yeet",
+        action="store_true",
+        help="YEET mode"
+    )
+    parser.add_argument(
+        "--sus",
+        action="store_true",
+        help="Suspicious mode (Among Us)"
+    )
+    parser.add_argument(
+        "--hacker",
+        action="store_true",
+        help="Hacker mode"
+    )
+    parser.add_argument(
+        "--cursed",
+        action="store_true",
+        help="Cursed mode"
+    )
+    parser.add_argument(
+        "--matrix",
+        action="store_true",
+        help="Matrix rain effect"
+    )
+    parser.add_argument(
+        "--bruh",
+        action="store_true",
+        help="Add bruh commentary"
+    )
+    parser.add_argument(
+        "--combo",
+        action="store_true",
+        help="ALL MODES AT ONCE (maximum chaos)"
+    )
+    parser.add_argument(
         "command",
         nargs=argparse.REMAINDER,
         help="Command to execute"
@@ -212,15 +438,21 @@ Examples:
     if args.no_color:
         Colors.RED = Colors.GREEN = Colors.YELLOW = Colors.BLUE = ""
         Colors.PURPLE = Colors.CYAN = Colors.RESET = Colors.BOLD = ""
+        Colors.DIM = Colors.REVERSE = Colors.BLINK = Colors.WHITE = ""
 
     if args.version:
-        print(f"{Colors.BOLD}sufdo version 2.0.0{Colors.RESET}")
+        print(f"{Colors.BOLD}sufdo version 3.0.0{Colors.RESET}")
         print("Super User Fkin Do")
         print("https://github.com/Arseniy1002/sufdo")
+        print(f"{Colors.DIM}Now with 100% more rofl!{Colors.RESET}")
         sys.exit(0)
 
     if args.history:
         print_history()
+        sys.exit(0)
+
+    if args.confidence:
+        print_confidence()
         sys.exit(0)
 
     # Handle aliases
@@ -268,9 +500,31 @@ Examples:
         print(f"{Colors.YELLOW}[ALIAS] {args.command[0]} -> {expanded}{Colors.RESET}")
         cmd_str = expanded
 
+    # COMBO MODE - ALL THE CHAOS
+    if args.combo:
+        args.drama = args.pray = args.yeet = args.sus = True
+        args.hacker = args.cursed = args.matrix = args.bruh = True
+
+    # Pre-execution effects
+    if args.drama:
+        drama_mode()
+    if args.pray:
+        pray_mode()
+    if args.matrix:
+        matrix_rain()
+    if args.hacker:
+        hacker_mode()
+    if args.cursed:
+        cursed_mode()
+    if args.sus:
+        sus_mode()
+
     # Execute the command
     print(f"{Colors.BLUE}[RUN]{Colors.RESET} sufdo: executing as {Colors.BOLD}{args.user}{Colors.RESET}")
     
+    if args.yeet:
+        yeet_mode()
+
     start_time = datetime.now()
     
     try:
@@ -295,10 +549,23 @@ Examples:
         
         if result.returncode == 0:
             print(f"{Colors.GREEN}[OK]{Colors.RESET} Command completed successfully ({duration:.2f}s)")
+            
+            # Confidence boost on success
+            old, new = confidence_boost()
+            print(f"{Colors.CYAN}Confidence: {old}% -> {new}% (+{new-old}){Colors.RESET}")
+            
             if args.flex:
                 print_flex()
+            if args.bruh:
+                print(bruh_mode())
         else:
             print(f"{Colors.RED}[FAIL]{Colors.RESET} Command failed with exit code {result.returncode} ({duration:.2f}s)")
+            
+            # Confidence loss on failure
+            old, new = confidence_insult()
+            print(f"{Colors.RED}Confidence: {old}% -> {new}% ({new-old}){Colors.RESET}")
+            if args.bruh:
+                print(bruh_mode())
         
         sys.exit(result.returncode)
         

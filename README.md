@@ -13,6 +13,7 @@ A sudo-like utility for executing commands with elevated privileges. Because som
 - Custom aliases
 - Flex messages after successful execution
 - Colored output
+- **Confidence system** - your confidence goes up/down based on command success
 
 ## Installation
 
@@ -24,7 +25,7 @@ chmod +x sufdo.py
 sudo ln -s $(pwd)/sufdo.py /usr/local/bin/sufdo
 ```
 
-## Usage
+## Basic Usage
 
 ```bash
 # Run command as root (default)
@@ -40,7 +41,80 @@ python sufdo.py -t 30 <command>
 python sufdo.py --version
 ```
 
-## Examples
+## ROFL Modes (UNIQUE FEATURES!)
+
+### Drama Mode
+```bash
+python sufdo.py --drama apt update
+# [DRAMA] INITIATING DESTRUCTION SEQUENCE...
+```
+
+### Pray Mode
+```bash
+python sufdo.py --pray apt update
+# [PRAY] In the name of Linus Torvalds we trust...
+```
+
+### YEET Mode
+```bash
+python sufdo.py --yeet apt update
+# [YEET] YEET! Command flying to the kernel!
+```
+
+### Sus Mode (Among Us)
+```bash
+python sufdo.py --sus apt update
+# [SUS] Among us... this command looks sus...
+```
+
+### Hacker Mode
+```bash
+python sufdo.py --hacker apt update
+# [+] Accessing mainframe...
+# [+] Bypassing firewall...
+# [+] Injecting SQL...
+```
+
+### Cursed Mode
+```bash
+python sufdo.py --cursed apt update
+# [CURSED] t̷h̷i̷s̷ ̷c̷o̷m̷m̷a̷n̷d̷ ̷i̷s̷ ̷c̷u̷r̷s̷e̷d̷
+```
+
+### Matrix Mode
+```bash
+python sufdo.py --matrix apt update
+# Matrix rain effect before execution
+```
+
+### Bruh Mode
+```bash
+python sufdo.py --bruh apt update
+# Adds bruh commentary after execution
+```
+
+### COMBO MODE (Maximum Chaos)
+```bash
+python sufdo.py --combo apt update
+# ALL MODES AT ONCE
+```
+
+## Confidence System
+
+Your confidence level changes based on command success/failure:
+
+```bash
+# Check confidence
+python sufdo.py --confidence
+# Confidence Level: [####################] 100%
+# MAXIMUM CONFIDENCE! YOU ARE UNSTOPPABLE!
+```
+
+- Success: +5-15 confidence
+- Failure: -5-20 confidence
+- At 0%: You need to touch some grass
+
+## More Examples
 
 ```bash
 # Basic execution
@@ -69,6 +143,9 @@ python sufdo.py --flex ls -la
 
 # Disable colors
 python sufdo.py --no-color ls -la
+
+# Go full chaos
+python sufdo.py --combo --flex rm -rf /tmp/*
 ```
 
 ## Command History
@@ -79,10 +156,16 @@ All executed commands are stored in `~/.sufdo/history.json`
 
 Aliases are stored in `~/.sufdo/aliases.json`
 
+## Confidence
+
+Confidence level is stored in `~/.sufdo/confidence.json`
+
 ## License
 
 MIT
 
 ---
 
-**⚠️ Disclaimer:** Use responsibly. The authors are not responsible for any damage caused by misuse of this tool.
+**⚠️ Disclaimer:** Use responsibly. The authors are not responsible for any damage caused by misuse of this tool. Or for any confidence depletion resulting from failed commands.
+
+**🎭 Made with chaos and questionable decisions.**
