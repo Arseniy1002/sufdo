@@ -5,7 +5,7 @@ sufdo - Super User Fkin Do - Ultimate Edition
 A sudo-like utility for executing commands with elevated privileges.
 Because sometimes you just need to get shit done.
 
-Version: 4.2.0 - Ultimate Edition (ALL FEATURES)
+Version: 4.3.0 - Ultimate Edition (ALL FEATURES)
 """
 
 import sys
@@ -694,69 +694,57 @@ def is_admin_windows() -> bool:
 def request_elevation_windows() -> bool:
     """
     Request elevation on Windows via UAC prompt.
-    Re-launches PowerShell as Administrator with command history.
-    Returns True if already admin, False otherwise (as current process exits).
+    Opens elevated PowerShell, executes command, shows output, and closes.
+    Current window remains open with history intact.
+    Returns True if already admin or elevation successful, False if cancelled.
     """
     if sys.platform != "win32":
         return True
 
     if is_admin_windows():
+        # Already running as admin - do nothing
         return True
 
     # Not running as admin - request elevation via UAC
     print(f"{Colors.YELLOW}[SUDO] Requesting administrator privileges...{Colors.RESET}")
-    
+
     try:
-        # Get command history for display in new window
-        history_output = ""
-        if HISTORY_FILE.exists():
-            try:
-                with open(HISTORY_FILE, encoding="utf-8") as f:
-                    history = json.load(f)
-                    if history:
-                        last_cmd = history[-1].get("command", "")
-                        if last_cmd:
-                            history_output = f"Previous command: {last_cmd}"
-            except:
-                pass
-        
-        # Build PowerShell command to re-run sufdo with admin rights
-        # Escape special characters for PowerShell
-        script_path = os.path.abspath(__file__).replace("'", "''")
+        # Build the command to execute
+        script_path = os.path.abspath(sys.argv[0]).replace("'", "''")
         args_escaped = ' '.join(sys.argv[1:]).replace("'", "''")
+        python_exec = sys.executable.replace("'", "''")
         
+        # PowerShell command that runs elevated and shows output
         ps_command = (
-            "Write-Host '[SUDO] Elevated PowerShell session' -ForegroundColor Yellow; "
-            f"Write-Host '{history_output}' -ForegroundColor Cyan; "
-            "Write-Host ''; "
-            f"& '{sys.executable}' '{script_path}' {args_escaped}"
+            f"Write-Host '[SUDO] Running elevated...' -ForegroundColor Yellow; "
+            f"& '{python_exec}' '{script_path}' {args_escaped}; "
+            f"Write-Host ''; "
+            f"Write-Host '[SUDO] Command complete.' -ForegroundColor Green"
         )
-        
-        # Use ShellExecuteW with 'runas' to trigger UAC and open new PowerShell
+
+        # Use ShellExecuteW with 'runas' to trigger UAC
         result = ctypes.windll.shell32.ShellExecuteW(
-            None,           # hwnd
-            "runas",       # lpOperation - request elevation
-            "powershell",  # lpFile
-            f"-NoExit -Command \"{ps_command}\"",  # lpParameters - -NoExit keeps window open
-            None,           # lpDirectory
-            1               # nShowCmd (SW_SHOWNORMAL)
+            None,
+            "runas",
+            "powershell",
+            f"-Command \"{ps_command}\"",
+            None,
+            1
         )
-        
-        # ShellExecuteW returns > 32 on success
+
         if result > 32:
-            # Elevation requested - close current window
-            print(f"{Colors.GREEN}[SUDO] Opening elevated PowerShell...{Colors.RESET}")
-            time.sleep(0.5)
-            # Close current console window
-            os._exit(0)
+            # UAC accepted - new window will open and run the command
+            print(f"{Colors.GREEN}[SUDO] Elevated window opened. Command will execute there.{Colors.RESET}")
+            print(f"{Colors.GREEN}[SUDO] This window remains open with your history.{Colors.RESET}")
+            return True  # Don't exit - keep current window open
         else:
             print(f"{Colors.RED}[SUDO] UAC cancelled or failed (error: {result}){Colors.RESET}")
             return False
-            
+
     except Exception as e:
         print(f"{Colors.RED}[SUDO] Elevation error: {e}{Colors.RESET}")
         return False
-    
+
     return True
 
 
@@ -1358,6 +1346,10 @@ def main():
     parser.add_argument("--timeout", "-t", type=int, help="Timeout")
     parser.add_argument("--confidence", action="store_true", help="Show confidence")
     
+    # Windows UAC elevation (only on Windows)
+    if sys.platform == "win32":
+        parser.add_argument("-a", action="store_true", help="Request administrator privileges via UAC (Windows only)")
+    
     # Stats
     parser.add_argument("--stats", action="store_true", help="Statistics")
     parser.add_argument("--top", action="store_true", help="Top commands")
@@ -1433,8 +1425,7 @@ def main():
     parser.add_argument("--completion", type=str, choices=["bash", "zsh", "fish"], help="Shell completion")
     parser.add_argument("--validate", action="store_true", help="Validate command")
     parser.add_argument("--undo", action="store_true", help="Undo last")
-    parser.add_argument("--admin", action="store_true", help="Request administrator privileges (Windows UAC)")
-    
+
     # AI
     parser.add_argument("--ai", nargs="?", const="ask", metavar="QUESTION", help="Ask AI about command error")
     parser.add_argument("--ai-config", action="store_true", help="Configure AI models")
@@ -1463,9 +1454,9 @@ def main():
 
     # Version
     if args.version:
-        ver = f"{Colors.BOLD}sufdo version 4.2.0{Colors.RESET}"
+        ver = f"{Colors.BOLD}sufdo version 4.3.0{Colors.RESET}"
         if args.rainbow:
-            ver = rainbow_text("sufdo version 4.2.0 - Ultimate Edition")
+            ver = rainbow_text("sufdo version 4.3.0 - Ultimate Edition")
         print(ver)
         print("Super User Fkin Do - Ultimate Edition")
         print("https://github.com/Arseniy1002/sufdo")
@@ -1822,8 +1813,8 @@ def main():
         print(f"{Colors.YELLOW}[ALIAS] {args.command[0]} -> {expanded}{Colors.RESET}")
         cmd_str = expanded
 
-    # Always request admin privileges on Windows (like sudo)
-    if sys.platform == "win32":
+    # Request admin privileges on Windows only with -a flag
+    if sys.platform == "win32" and hasattr(args, 'a') and args.a:
         request_elevation_windows()
 
     # Load profile

@@ -1,4 +1,4 @@
-# sufdo v4.2.0 - Ultimate Edition
+# sufdo v4.3.0 - Ultimate Edition
 
 **Super User Fkin Do** — A sudo-like utility for executing commands with elevated privileges.
 
@@ -148,7 +148,7 @@ sufdo --ai gpt python script.py
 | `--completion` | Shell completion (bash/zsh/fish) |
 | `--validate` | Validate command |
 | `--undo` | Undo last command |
-| `--admin` | Request UAC elevation (Windows) |
+| `-a` | Request UAC elevation (Windows only) |
 | `--pkg` | Use system package manager |
 
 ### 📜 History & Core (6 flags)
@@ -280,9 +280,13 @@ sufdo --env python app.py
 ```
 
 ### Windows UAC Elevation
+
 ```bash
-# Request administrator privileges
-sufdo --admin dir C:\Windows\System32
+# Request administrator privileges (Windows only)
+sufdo -a dir C:\Windows\System32
+
+# If already running as admin, nothing happens
+sufdo -a whoami
 ```
 
 ## 📁 Config Files
@@ -351,4 +355,4 @@ MIT
 
 **GitHub:** https://github.com/Arseniy1002/sufdo
 
-**Version:** 4.2.0 Ultimate Edition
+**Version:** 4.3.0 Ultimate Edition
