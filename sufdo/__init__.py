@@ -3,6 +3,8 @@ sufdo - Super User Fkin Do
 
 A sudo-like utility for executing commands with elevated privileges.
 Because sometimes you just need to get shit done.
+
+Version: 3.1.0
 """
 
 import sys
@@ -12,6 +14,7 @@ import os
 import json
 import random
 import time
+import logging
 from datetime import datetime
 from pathlib import Path
 
@@ -21,6 +24,8 @@ SUFDO_DIR = Path.home() / ".sufdo"
 HISTORY_FILE = SUFDO_DIR / "history.json"
 ALIASES_FILE = SUFDO_DIR / "aliases.json"
 CONFIDENCE_FILE = SUFDO_DIR / "confidence.json"
+LOG_FILE = SUFDO_DIR / "sufdo.log"
+CONFIG_FILE = SUFDO_DIR / "config.json"
 
 # Colors
 class Colors:
@@ -41,6 +46,38 @@ class Colors:
 def ensure_config_dir():
     """Create config directory if it doesn't exist."""
     SUFDO_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def load_config():
+    """Load user configuration."""
+    if not CONFIG_FILE.exists():
+        return {}
+    try:
+        with open(CONFIG_FILE) as f:
+            return json.load(f)
+    except:
+        return {}
+
+
+def save_config(config):
+    """Save user configuration."""
+    ensure_config_dir()
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(config, f, indent=2)
+
+
+def setup_logging(log_file=None, level=logging.INFO):
+    """Setup logging to file."""
+    ensure_config_dir()
+    log_path = log_file or LOG_FILE
+    
+    logging.basicConfig(
+        filename=log_path,
+        level=level,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    return logging.getLogger('sufdo')
 
 
 def log_command(command, user, exit_code, duration):
@@ -320,6 +357,12 @@ Examples:
   sufdo --last                        Re-run last command
   sufdo --alias build="npm run build" Create an alias
 
+SILENT/VERBOSE MODES:
+  sufdo --silent ls                   Silent mode (only errors)
+  sufdo --verbose ls                  Verbose output
+  sufdo --debug ls                    Debug information
+  sufdo --trace ls                    Trace execution
+
 ROFL MODES:
   sufdo --drama apt update            Dramatic execution
   sufdo --pray apt update             Pray before execution
@@ -330,6 +373,7 @@ ROFL MODES:
   sufdo --matrix apt update           Matrix rain before execution
   sufdo --bruh apt update             Bruh after execution
   sufdo --confidence                  Show confidence level
+  sufdo --combo apt update            ALL MODES AT ONCE
         """
     )
     parser.add_argument(
@@ -378,6 +422,27 @@ ROFL MODES:
         "--confidence",
         action="store_true",
         help="Show current confidence level"
+    )
+    # Silent/Verbose modes
+    parser.add_argument(
+        "--silent", "-q", "--quiet",
+        action="store_true",
+        help="Silent mode - only show errors"
+    )
+    parser.add_argument(
+        "--verbose", "-V",
+        action="store_true",
+        help="Verbose mode - detailed output"
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Debug mode - show debug information"
+    )
+    parser.add_argument(
+        "--trace",
+        action="store_true",
+        help="Trace mode - trace function calls"
     )
     # ROFL modes
     parser.add_argument(
@@ -433,16 +498,34 @@ ROFL MODES:
 
     args = parser.parse_args()
 
+    # Setup logging if debug/verbose
+    logger = None
+    if args.debug or args.verbose:
+        logger = setup_logging()
+        if args.debug:
+            logger.setLevel(logging.DEBUG)
+        else:
+            logger.setLevel(logging.INFO)
+
     # Handle --no-color
     if args.no_color:
         Colors.RED = Colors.GREEN = Colors.YELLOW = Colors.BLUE = ""
         Colors.PURPLE = Colors.CYAN = Colors.RESET = Colors.BOLD = ""
         Colors.DIM = Colors.REVERSE = Colors.BLINK = Colors.WHITE = ""
 
+    # Silent mode overrides
+    if args.silent:
+        Colors.RED = Colors.GREEN = Colors.YELLOW = Colors.BLUE = ""
+        Colors.PURPLE = Colors.CYAN = Colors.RESET = Colors.BOLD = ""
+        Colors.DIM = Colors.REVERSE = Colors.BLINK = Colors.WHITE = ""
+
     if args.version:
-        print(f"{Colors.BOLD}sufdo version 3.0.0{Colors.RESET}")
+        print(f"{Colors.BOLD}sufdo version 3.1.0{Colors.RESET}")
         print("Super User Fkin Do")
         print("https://github.com/Arseniy1002/sufdo")
+        if args.verbose:
+            print(f"Config dir: {SUFDO_DIR}")
+            print(f"Log file: {LOG_FILE}")
         print(f"{Colors.DIM}Now with 100% more rofl!{Colors.RESET}")
         sys.exit(0)
 
@@ -518,8 +601,21 @@ ROFL MODES:
     if args.sus:
         sus_mode()
 
-    # Execute the command
-    print(f"{Colors.BLUE}[RUN]{Colors.RESET} sufdo: executing as {Colors.BOLD}{args.user}{Colors.RESET}")
+    # Verbose/Debug output
+    if args.verbose:
+        print(f"{Colors.CYAN}[VERBOSE] Command: {cmd_str}{Colors.RESET}")
+        print(f"{Colors.CYAN}[VERBOSE] User: {args.user}{Colors.RESET}")
+        print(f"{Colors.CYAN}[VERBOSE] Timeout: {args.timeout}{Colors.RESET}")
+    if args.debug:
+        print(f"{Colors.YELLOW}[DEBUG] Python: {sys.version}{Colors.RESET}")
+        print(f"{Colors.YELLOW}[DEBUG] Platform: {sys.platform}{Colors.RESET}")
+        print(f"{Colors.YELLOW}[DEBUG] Args: {args}{Colors.RESET}")
+    if args.trace:
+        print(f"{Colors.WHITE}[TRACE] Entering main execution{Colors.RESET}")
+
+    # Silent mode - don't show execution message
+    if not args.silent:
+        print(f"{Colors.BLUE}[RUN]{Colors.RESET} sufdo: executing as {Colors.BOLD}{args.user}{Colors.RESET}")
 
     if args.yeet:
         yeet_mode()
@@ -527,6 +623,12 @@ ROFL MODES:
     start_time = datetime.now()
 
     try:
+        if args.trace:
+            print(f"{Colors.WHITE}[TRACE] Starting subprocess at {start_time}{Colors.RESET}")
+        
+        if logger:
+            logger.info(f"Executing: {cmd_str}")
+        
         result = subprocess.run(
             cmd_str,
             shell=True,
@@ -538,41 +640,65 @@ ROFL MODES:
 
         duration = (datetime.now() - start_time).total_seconds()
 
-        if result.stdout:
-            print(result.stdout, end="")
-        if result.stderr:
-            print(result.stderr, end="", file=sys.stderr)
+        if args.trace:
+            print(f"{Colors.WHITE}[TRACE] Command completed at {datetime.now()}{Colors.RESET}")
+
+        # Silent mode - only show errors
+        if args.silent:
+            if result.stderr:
+                print(result.stderr, end="", file=sys.stderr)
+        else:
+            if result.stdout:
+                print(result.stdout, end="")
+            if result.stderr:
+                if args.verbose:
+                    print(result.stderr, end="", file=sys.stderr)
+                elif result.returncode != 0:
+                    print(result.stderr, end="", file=sys.stderr)
 
         # Log to history
         log_command(cmd_str, args.user, result.returncode, duration)
+        
+        if logger:
+            logger.info(f"Exit code: {result.returncode}, Duration: {duration:.2f}s")
 
         if result.returncode == 0:
-            print(f"{Colors.GREEN}[OK]{Colors.RESET} Command completed successfully ({duration:.2f}s)")
+            if not args.silent:
+                print(f"{Colors.GREEN}[OK]{Colors.RESET} Command completed successfully ({duration:.2f}s)")
 
-            # Confidence boost on success
-            old, new = confidence_boost()
-            print(f"{Colors.CYAN}Confidence: {old}% -> {new}% (+{new-old}){Colors.RESET}")
+                # Confidence boost on success
+                old, new = confidence_boost()
+                if not args.silent:
+                    print(f"{Colors.CYAN}Confidence: {old}% -> {new}% (+{new-old}){Colors.RESET}")
 
-            if args.flex:
-                print_flex()
-            if args.bruh:
-                print(bruh_mode())
+                if args.flex:
+                    print_flex()
+                if args.bruh:
+                    print(bruh_mode())
         else:
-            print(f"{Colors.RED}[FAIL]{Colors.RESET} Command failed with exit code {result.returncode} ({duration:.2f}s)")
+            if not args.silent:
+                print(f"{Colors.RED}[FAIL]{Colors.RESET} Command failed with exit code {result.returncode} ({duration:.2f}s)")
 
-            # Confidence loss on failure
-            old, new = confidence_insult()
-            print(f"{Colors.RED}Confidence: {old}% -> {new}% ({new-old}){Colors.RESET}")
-            if args.bruh:
-                print(bruh_mode())
+                # Confidence loss on failure
+                old, new = confidence_insult()
+                if not args.silent:
+                    print(f"{Colors.RED}Confidence: {old}% -> {new}% ({new-old}){Colors.RESET}")
+                if args.bruh:
+                    print(bruh_mode())
 
         sys.exit(result.returncode)
 
     except subprocess.TimeoutExpired:
-        print(f"{Colors.RED}[TIMEOUT]{Colors.RESET} Command timed out after {args.timeout}s")
+        if logger:
+            logger.error(f"Timeout after {args.timeout}s")
+        if not args.silent:
+            print(f"{Colors.RED}[TIMEOUT]{Colors.RESET} Command timed out after {args.timeout}s")
         sys.exit(124)
     except Exception as e:
-        print(f"{Colors.RED}sufdo: error executing command: {e}{Colors.RESET}")
+        if logger:
+            logger.error(f"Exception: {e}")
+        if not args.silent:
+            print(f"{Colors.RED}sufdo: error executing command: {e}{Colors.RESET}")
         sys.exit(1)
 
 
