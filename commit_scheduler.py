@@ -260,9 +260,9 @@ def create_schedule():
     with open(SCHEDULE_FILE, "w", encoding="utf-8") as f:
         json.dump(schedule, f, indent=2, ensure_ascii=False)
     
-    print(f"✅ Создано расписание: {len(schedule)} коммитов")
-    print(f"📁 Файл: {SCHEDULE_FILE}")
-    print(f"📅 Период: {today.date()} - {(today + timedelta(days=len(FEATURES_BY_DAY))).date()}")
+    print(f"[OK] Created schedule: {len(schedule)} commits")
+    print(f"File: {SCHEDULE_FILE}")
+    print(f"Period: {today.date()} - {(today + timedelta(days=len(FEATURES_BY_DAY))).date()}")
     
     return schedule
 
@@ -280,7 +280,7 @@ def run_commit(message, version):
         )
         
         if not result.stdout.strip():
-            print(f"⚠️ Нет изменений для коммита: {message}")
+            print(f"[SKIP] No changes for commit: {message}")
             return False
         
         # Add все файлы
@@ -302,21 +302,21 @@ def run_commit(message, version):
             check=True
         )
         
-        print(f"✅ Committed: {message[:50]}...")
+        print(f"[OK] Committed: {message[:50]}...")
         return True
         
     except subprocess.CalledProcessError as e:
-        print(f"❌ Commit failed: {e}")
+        print(f"[FAIL] Commit failed: {e}")
         return False
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"[FAIL] Error: {e}")
         return False
 
 
 def check_and_run():
     """Проверить и выполнить запланированные коммиты"""
     if not SCHEDULE_FILE.exists():
-        print("❌ Расписание не найдено. Запустите: python commit_scheduler.py --create")
+        print("[FAIL] Schedule not found. Run: python commit_scheduler.py --create")
         return
     
     with open(SCHEDULE_FILE, "r", encoding="utf-8") as f:
@@ -332,7 +332,7 @@ def check_and_run():
         
         scheduled = datetime.fromisoformat(item["scheduled_time"])
         if scheduled <= now:
-            print(f"\n🔨 Выполняю коммит: {item['feature']}")
+            print(f"\n[HACK] Running commit: {item['feature']}")
             if run_commit(item["feature"], item["version"]):
                 item["done"] = True
                 changed = True
@@ -341,15 +341,15 @@ def check_and_run():
     if changed:
         with open(SCHEDULE_FILE, "w", encoding="utf-8") as f:
             json.dump(schedule, f, indent=2, ensure_ascii=False)
-        print(f"\n📊 Выполнено коммитов: {committed}")
+        print(f"\n[STATS] Commits done: {committed}")
     else:
-        print("⏰ Нет коммитов для выполнения")
+        print("[WAIT] No commits to run")
 
 
 def show_status():
     """Показать статус расписания"""
     if not SCHEDULE_FILE.exists():
-        print("❌ Расписание не найдено")
+        print("[FAIL] Schedule not found")
         return
     
     with open(SCHEDULE_FILE, "r", encoding="utf-8") as f:
@@ -359,17 +359,17 @@ def show_status():
     done = sum(1 for item in schedule if item["done"])
     pending = total - done
     
-    print(f"\n📊 Статус расписания:")
-    print(f"   Всего коммитов: {total}")
-    print(f"   ✅ Выполнено: {done}")
-    print(f"   ⏳ Ожидается: {pending}")
-    print(f"   📈 Прогресс: {done/total*100:.1f}%")
+    print(f"\n[STATUS] Schedule status:")
+    print(f"   Total commits: {total}")
+    print(f"   Done: {done}")
+    print(f"   Pending: {pending}")
+    print(f"   Progress: {done/total*100:.1f}%")
     
     # Следующий коммит
     next_commit = next((item for item in schedule if not item["done"]), None)
     if next_commit:
         scheduled = datetime.fromisoformat(next_commit["scheduled_time"])
-        print(f"\n📅 Следующий коммит:")
+        print(f"\n[NEXT] Next commit:")
         print(f"   {next_commit['feature']}")
         print(f"   {scheduled.strftime('%Y-%m-%d %H:%M')}")
 
@@ -386,10 +386,10 @@ def install_scheduler():
     with open(bat_path, "w") as f:
         f.write(bat_content)
     
-    print(f"✅ Создан batch-файл: {bat_path}")
-    print(f"\n📋 Для установки в планировщик задач выполните:")
+    print(f"[OK] Created batch file: {bat_path}")
+    print(f"\nTo install in Windows Task Scheduler, run:")
     print(f'   schtasks /Create /TN "sufdo_scheduler" /TR "{bat_path}" /SC HOURLY /RL HIGHEST')
-    print(f"\n📋 Или вручную откройте taskschd.msc и создайте задачу")
+    print(f"\nOr manually open taskschd.msc and create a task")
 
 
 if __name__ == "__main__":
@@ -404,11 +404,11 @@ if __name__ == "__main__":
         elif cmd == "install":
             install_scheduler()
         else:
-            print("Команды: --create, check, status, install")
+            print("Commands: --create, check, status, install")
     else:
         print("sufdo Commit Scheduler")
-        print("\nКоманды:")
-        print("  python commit_scheduler.py --create  - Создать расписание")
-        print("  python commit_scheduler.py check     - Проверить и выполнить коммиты")
-        print("  python commit_scheduler.py status    - Показать статус")
-        print("  python commit_scheduler.py install   - Установить в планировщик")
+        print("\nCommands:")
+        print("  python commit_scheduler.py --create  - Create schedule")
+        print("  python commit_scheduler.py check     - Check and run commits")
+        print("  python commit_scheduler.py status    - Show status")
+        print("  python commit_scheduler.py install   - Install in Task Scheduler")
