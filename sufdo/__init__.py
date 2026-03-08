@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 sufdo - Super User Fkin Do
 
@@ -47,7 +46,7 @@ def ensure_config_dir():
 def log_command(command, user, exit_code, duration):
     """Log command execution to history."""
     ensure_config_dir()
-    
+
     history = []
     if HISTORY_FILE.exists():
         try:
@@ -55,7 +54,7 @@ def log_command(command, user, exit_code, duration):
                 history = json.load(f)
         except:
             history = []
-    
+
     history.append({
         "timestamp": datetime.now().isoformat(),
         "command": command,
@@ -63,10 +62,10 @@ def log_command(command, user, exit_code, duration):
         "exit_code": exit_code,
         "duration": duration
     })
-    
+
     # Keep last 100 commands
     history = history[-100:]
-    
+
     with open(HISTORY_FILE, "w") as f:
         json.dump(history, f, indent=2)
 
@@ -75,7 +74,7 @@ def get_last_command():
     """Get the last executed command from history."""
     if not HISTORY_FILE.exists():
         return None
-    
+
     try:
         with open(HISTORY_FILE) as f:
             history = json.load(f)
@@ -90,7 +89,7 @@ def load_aliases():
     """Load user aliases."""
     if not ALIASES_FILE.exists():
         return {}
-    
+
     try:
         with open(ALIASES_FILE) as f:
             return json.load(f)
@@ -109,7 +108,7 @@ def get_confidence():
     """Get user's current confidence level."""
     if not CONFIDENCE_FILE.exists():
         return 100
-    
+
     try:
         with open(CONFIDENCE_FILE) as f:
             data = json.load(f)
@@ -216,7 +215,7 @@ def hacker_mode():
 def cursed_mode():
     """Cursed mode - weird output."""
     cursed_texts = [
-        "t̷h̷i̷s̷ ̷c̷o̷m̷m̷a̷n̷d̷ ̷i̷s̷ ̷c̷u̷r̷s̷e̷d̷",
+        "this command is cursed",
         "your soul has been bound to this terminal",
         "the demons are pleased with your choice",
         "you have awakened the ancient ones",
@@ -257,7 +256,7 @@ def print_confidence():
     level = get_confidence()
     bars = "#" * (level // 5) + "-" * (20 - level // 5)
     print(f"{Colors.BOLD}Confidence Level:{Colors.RESET} [{bars}] {level}%")
-    
+
     if level == 100:
         print(f"{Colors.GREEN}MAXIMUM CONFIDENCE! YOU ARE UNSTOPPABLE!{Colors.RESET}")
     elif level >= 75:
@@ -275,15 +274,15 @@ def print_history():
     if not HISTORY_FILE.exists():
         print(f"{Colors.YELLOW}No history yet. Go break something!{Colors.RESET}")
         return
-    
+
     try:
         with open(HISTORY_FILE) as f:
             history = json.load(f)
-        
+
         if not history:
             print(f"{Colors.YELLOW}No history yet. Go break something!{Colors.RESET}")
             return
-        
+
         print(f"{Colors.BOLD}Command History:{Colors.RESET}\n")
         for i, entry in enumerate(history[-10:], 1):
             status = "[OK]" if entry["exit_code"] == 0 else "[FAIL]"
@@ -320,7 +319,7 @@ Examples:
   sufdo --history                     Show command history
   sufdo --last                        Re-run last command
   sufdo --alias build="npm run build" Create an alias
-  
+
 ROFL MODES:
   sufdo --drama apt update            Dramatic execution
   sufdo --pray apt update             Pray before execution
@@ -493,7 +492,7 @@ ROFL MODES:
     # Expand aliases
     aliases = load_aliases()
     cmd_str = " ".join(args.command) if isinstance(args.command, list) else args.command
-    
+
     # Check for alias
     if args.command and args.command[0] in aliases:
         expanded = aliases[args.command[0]] + " " + " ".join(args.command[1:])
@@ -521,12 +520,12 @@ ROFL MODES:
 
     # Execute the command
     print(f"{Colors.BLUE}[RUN]{Colors.RESET} sufdo: executing as {Colors.BOLD}{args.user}{Colors.RESET}")
-    
+
     if args.yeet:
         yeet_mode()
 
     start_time = datetime.now()
-    
+
     try:
         result = subprocess.run(
             cmd_str,
@@ -536,39 +535,39 @@ ROFL MODES:
             text=True,
             timeout=args.timeout
         )
-        
+
         duration = (datetime.now() - start_time).total_seconds()
-        
+
         if result.stdout:
             print(result.stdout, end="")
         if result.stderr:
             print(result.stderr, end="", file=sys.stderr)
-        
+
         # Log to history
         log_command(cmd_str, args.user, result.returncode, duration)
-        
+
         if result.returncode == 0:
             print(f"{Colors.GREEN}[OK]{Colors.RESET} Command completed successfully ({duration:.2f}s)")
-            
+
             # Confidence boost on success
             old, new = confidence_boost()
             print(f"{Colors.CYAN}Confidence: {old}% -> {new}% (+{new-old}){Colors.RESET}")
-            
+
             if args.flex:
                 print_flex()
             if args.bruh:
                 print(bruh_mode())
         else:
             print(f"{Colors.RED}[FAIL]{Colors.RESET} Command failed with exit code {result.returncode} ({duration:.2f}s)")
-            
+
             # Confidence loss on failure
             old, new = confidence_insult()
             print(f"{Colors.RED}Confidence: {old}% -> {new}% ({new-old}){Colors.RESET}")
             if args.bruh:
                 print(bruh_mode())
-        
+
         sys.exit(result.returncode)
-        
+
     except subprocess.TimeoutExpired:
         print(f"{Colors.RED}[TIMEOUT]{Colors.RESET} Command timed out after {args.timeout}s")
         sys.exit(124)

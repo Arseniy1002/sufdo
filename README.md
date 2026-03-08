@@ -18,27 +18,17 @@ A sudo-like utility for executing commands with elevated privileges. Because som
 ## Installation
 
 ```bash
-# Make executable
-chmod +x sufdo.py
+# Install from source
+pip install .
 
-# Optional: create symlink in PATH
-sudo ln -s $(pwd)/sufdo.py /usr/local/bin/sufdo
+# Or install in editable mode (for development)
+pip install -e .
 ```
 
-## Basic Usage
-
+After installation, you can use `sufdo` directly:
 ```bash
-# Run command as root (default)
-python sufdo.py <command>
-
-# Run command as specific user
-python sufdo.py -u <username> <command>
-
-# Run with timeout (30 seconds)
-python sufdo.py -t 30 <command>
-
-# Show version
-python sufdo.py --version
+sufdo --version
+sufdo ls -la
 ```
 
 ## ROFL Modes (UNIQUE FEATURES!)
@@ -118,34 +108,34 @@ python sufdo.py --confidence
 
 ```bash
 # Basic execution
-python sufdo.py apt update
-python sufdo.py systemctl restart nginx
+sufdo apt update
+sufdo systemctl restart nginx
 
 # Execute with timeout
-python sufdo.py -t 60 python long_script.py
+sufdo -t 60 python long_script.py
 
 # Re-run last command
-python sufdo.py --last
-python sufdo.py -!  # shorthand
+sufdo --last
+sufdo -!  # shorthand
 
 # View history
-python sufdo.py --history
+sufdo --history
 
 # Create aliases
-python sufdo.py --alias build="npm run build"
-python sufdo.py --alias deploy="git push && ssh server deploy"
+sufdo --alias build="npm run build"
+sufdo --alias deploy="git push && ssh server deploy"
 
 # List aliases
-python sufdo.py --alias
+sufdo --alias
 
 # Show flex message after success
-python sufdo.py --flex ls -la
+sufdo --flex ls -la
 
 # Disable colors
-python sufdo.py --no-color ls -la
+sufdo --no-color ls -la
 
 # Go full chaos
-python sufdo.py --combo --flex rm -rf /tmp/*
+sufdo --combo --flex rm -rf /tmp/*
 ```
 
 ## Command History
