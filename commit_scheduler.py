@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-sufdo Commit Scheduler
-Автоматически создаёт коммиты в планировщике задач на разные дни
+sufdo Commit Scheduler v2.0
+Автоматически создаёт коммиты и пушит на GitHub
 """
 
 import subprocess
@@ -13,15 +13,15 @@ from pathlib import Path
 SCHEDULE_FILE = Path(__file__).parent / "commit_schedule.json"
 PROJECT_DIR = Path(__file__).parent
 
-# Функции по дням (20 функций в день)
+# Все функции по дням (20 функций в день × 10 дней = 200 функций)
 FEATURES_BY_DAY = {
     1: [
         "Add --silent mode for quiet execution",
-        "Add --verbose mode for detailed output",
-        "Add --quiet alias for silent mode",
+        "Add --verbose/-V mode for detailed output",
+        "Add --quiet/-q alias for silent mode",
         "Add --debug mode for debugging",
         "Add --trace mode for execution tracing",
-        "Add silent/verbose to config file",
+        "Add silent/verbose config options",
         "Add verbose logging with timestamps",
         "Add debug output for subprocess calls",
         "Add trace output for function calls",
@@ -254,7 +254,8 @@ def create_schedule():
                 "feature": feature,
                 "scheduled_time": commit_time.isoformat(),
                 "done": False,
-                "version": f"v3.{day_num}.0"
+                "version": f"v3.{day_num}.0",
+                "pushed": False
             })
     
     with open(SCHEDULE_FILE, "w", encoding="utf-8") as f:
@@ -313,6 +314,27 @@ def run_commit(message, version):
         return False
 
 
+def run_push():
+    """Выполнить git push"""
+    try:
+        subprocess.run(
+            ["git", "push", "origin", "main"],
+            cwd=PROJECT_DIR,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True
+        )
+        print("[OK] Pushed to GitHub")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"[FAIL] Push failed: {e}")
+        return False
+    except Exception as e:
+        print(f"[FAIL] Push error: {e}")
+        return False
+
+
 def check_and_run():
     """Проверить и выполнить запланированные коммиты"""
     if not SCHEDULE_FILE.exists():
@@ -342,6 +364,10 @@ def check_and_run():
         with open(SCHEDULE_FILE, "w", encoding="utf-8") as f:
             json.dump(schedule, f, indent=2, ensure_ascii=False)
         print(f"\n[STATS] Commits done: {committed}")
+        
+        # Авто-пуш после коммитов
+        print("\n[PUSH] Pushing to GitHub...")
+        run_push()
     else:
         print("[WAIT] No commits to run")
 
@@ -380,7 +406,7 @@ def install_scheduler():
     python_exe = sys.executable
     
     # Создаем .bat файл для планировщика
-    bat_content = f'@echo off\n"{python_exe}" "{script_path}" check'
+    bat_content = f'@echo off\ncd /d "{PROJECT_DIR}"\n"{python_exe}" "{script_path}" check'
     bat_path = PROJECT_DIR / "run_scheduler.bat"
     
     with open(bat_path, "w") as f:
@@ -390,6 +416,24 @@ def install_scheduler():
     print(f"\nTo install in Windows Task Scheduler, run:")
     print(f'   schtasks /Create /TN "sufdo_scheduler" /TR "{bat_path}" /SC HOURLY /RL HIGHEST')
     print(f"\nOr manually open taskschd.msc and create a task")
+
+
+def reset_schedule():
+    """Сбросить расписание"""
+    if SCHEDULE_FILE.exists():
+        with open(SCHEDULE_FILE, "r", encoding="utf-8") as f:
+            schedule = json.load(f)
+        
+        for item in schedule:
+            item["done"] = False
+            item["pushed"] = False
+        
+        with open(SCHEDULE_FILE, "w", encoding="utf-8") as f:
+            json.dump(schedule, f, indent=2, ensure_ascii=False)
+        
+        print("[OK] Schedule reset")
+    else:
+        print("[FAIL] Schedule not found")
 
 
 if __name__ == "__main__":
@@ -403,12 +447,18 @@ if __name__ == "__main__":
             show_status()
         elif cmd == "install":
             install_scheduler()
+        elif cmd == "push":
+            run_push()
+        elif cmd == "reset":
+            reset_schedule()
         else:
-            print("Commands: --create, check, status, install")
+            print("Commands: --create, check, status, install, push, reset")
     else:
-        print("sufdo Commit Scheduler")
+        print("sufdo Commit Scheduler v2.0")
         print("\nCommands:")
         print("  python commit_scheduler.py --create  - Create schedule")
-        print("  python commit_scheduler.py check     - Check and run commits")
+        print("  python commit_scheduler.py check     - Check and run commits + auto push")
         print("  python commit_scheduler.py status    - Show status")
         print("  python commit_scheduler.py install   - Install in Task Scheduler")
+        print("  python commit_scheduler.py push      - Push to GitHub")
+        print("  python commit_scheduler.py reset     - Reset schedule")
