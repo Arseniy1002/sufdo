@@ -1,6 +1,6 @@
 # sufdo v4.5.0 - Refactored Edition
 
-**Super User Fkin Do** — A sudo-like utility for executing commands with elevated privileges.
+**Super User Fkin Do** - A sudo-like utility for executing commands with elevated privileges.
 
 > Because sometimes you just need to get shit done. With style.
 
@@ -13,10 +13,10 @@
 - **5** notification methods
 - **AI-powered** error analysis
 - **UAC elevation** for Windows
-- **Type hints** — 100% coverage
-- **Unit tests** — 62 tests
+- **Type hints** - 100% coverage
+- **Unit tests** - 62 tests
 - **Encrypted** API keys
-- **Cross-platform** — Windows, macOS, Linux, Termux
+- **Cross-platform** - Windows, macOS, Linux, Termux
 
 ## 📦 Installation
 
@@ -27,12 +27,12 @@ pip install -e .
 ## 🔥 What's New in v4.5.0
 
 ### Modular Architecture
-- **6 command handler modules** — AI, stats, aliases, safety, notifications, config
-- **Cleaner codebase** — main() reduced from 891 to ~660 lines
+- **6 command handler modules** - AI, stats, aliases, safety, notifications, config
+- **Cleaner codebase** - main() reduced from 891 to ~660 lines
 - **Better error handling** with proper timeout and interrupt support
 
 ### Cross-Platform Support
-- **Termux (Android)** — auto-detects and uses `pkg install`
+- **Termux (Android)** - auto-detects and uses `pkg install`
 - **Smart package manager detection**:
   - Windows: `winget install`
   - macOS: `brew install`
@@ -40,7 +40,7 @@ pip install -e .
   - Linux: `apt/pacman/dnf/apk` (auto-detected)
 
 ### Improved Execution
-- **Better Ctrl+C handling** — clean interrupt with friendly message
+- **Better Ctrl+C handling** - clean interrupt with friendly message
 - **Parallel execution** with proper timeout handling
 - **Background job tracking** with kill functionality
 
@@ -379,21 +379,6 @@ Use responsibly. The authors are not responsible for:
 ## 📄 License
 
 MIT
-
----
-
-## 📊 Project Quality
-
-| Aspect | Rating | Notes |
-|--------|--------|-------|
-| **Architecture** | ⭐⭐⭐⭐⭐ | Modular design with clean separation |
-| **Code Quality** | ⭐⭐⭐⭐⭐ | Type hints, docstrings, best practices |
-| **Testing** | ⭐⭐⭐⭐ | 62 tests, ~70% coverage |
-| **Documentation** | ⭐⭐⭐⭐⭐ | Comprehensive README + changelog |
-| **Security** | ⭐⭐⭐⭐ | Encrypted keys, command validation |
-| **Performance** | ⭐⭐⭐⭐ | In-memory caching, optimized I/O |
-
-**Overall: 8.5/10** — Production-ready with minor improvements needed
 
 ---
 
