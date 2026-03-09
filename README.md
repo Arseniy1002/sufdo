@@ -1,4 +1,4 @@
-# sufdo v4.3.0 - Ultimate Edition
+# sufdo v4.4.0 - Optimized Edition
 
 **Super User Fkin Do** — A sudo-like utility for executing commands with elevated privileges.
 
@@ -13,6 +13,9 @@
 - **5** notification methods
 - **AI-powered** error analysis
 - **UAC elevation** for Windows
+- **Type hints** — 100% coverage
+- **Unit tests** — 25 tests
+- **Encrypted** API keys
 
 ## 📦 Installation
 
@@ -355,4 +358,4 @@ MIT
 
 **GitHub:** https://github.com/Arseniy1002/sufdo
 
-**Version:** 4.3.0 Ultimate Edition
+**Version:** 4.4.0 Optimized Edition
